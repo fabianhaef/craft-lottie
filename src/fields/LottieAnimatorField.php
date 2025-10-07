@@ -24,13 +24,18 @@ class LottieAnimatorField extends Field
 
     public function getContentColumnType(): array|string
     {
-        return Schema::TYPE_JSON;
+        return Schema::TYPE_INTEGER;
     }
 
     public function normalizeValue(mixed $value, ?ElementInterface $element = null): mixed
     {
         if ($value === null || $value === '' || $value === []) {
             return null;
+        }
+
+        // If it's already an Asset element, return it
+        if ($value instanceof \craft\elements\Asset) {
+            return $value;
         }
 
         if (is_string($value)) {
@@ -42,33 +47,39 @@ class LottieAnimatorField extends Field
             }
         }
 
-        // Ensure we have an array structure with at least an assetId
+        // Extract the asset ID
+        $assetId = null;
+
         if (is_array($value)) {
-            $normalized = [
-                'assetId' => $value['assetId'] ?? null,
-                'data' => $value['data'] ?? null,
-                'speed' => $value['speed'] ?? 1.0,
-            ];
-
-            // If no assetId, return null
-            if (!$normalized['assetId']) {
-                return null;
+            // Extract assetId - it comes as an array from elementSelectField
+            if (isset($value['assetId'])) {
+                if (is_array($value['assetId']) && !empty($value['assetId'])) {
+                    $assetId = $value['assetId'][0];
+                } elseif (is_numeric($value['assetId'])) {
+                    $assetId = $value['assetId'];
+                }
             }
-
-            Craft::info('Lottie normalizeValue output: ' . print_r($normalized, true), __METHOD__);
-            return $normalized;
+        } elseif (is_numeric($value)) {
+            // It's already an asset ID
+            $assetId = $value;
         }
 
-        return $value;
+        // If no assetId, return null
+        if (!$assetId) {
+            return null;
+        }
+
+        // Return the Asset element directly
+        return Craft::$app->getAssets()->getAssetById((int)$assetId);
     }
 
     public function serializeValue(mixed $value, ?ElementInterface $element = null): mixed
     {
-        if ($value === null) {
-            return null;
+        if ($value instanceof \craft\elements\Asset) {
+            return $value->id;
         }
 
-        return Json::encode($value);
+        return $value;
     }
 
     public function getInputHtml(mixed $value, ?ElementInterface $element = null): string

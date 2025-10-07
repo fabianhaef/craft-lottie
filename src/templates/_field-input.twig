@@ -1,8 +1,7 @@
 {% import "_includes/forms" as forms %}
 
 <div class="lottie-field">
-    {% set assetId = value.assetId ?? null %}
-    {% set asset = assetId ? craft.assets.id(assetId).one() : null %}
+    {% set asset = value %}
 
     {{ forms.elementSelectField({
         label: "Lottie Animation File"|t('craft-lottie'),

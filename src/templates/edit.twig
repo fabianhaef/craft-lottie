@@ -186,15 +186,30 @@ function initLottieEditor() {
         });
 
         // Apply speed
-        if (speedControl.value) {
-            lottieAnimation.setSpeed(parseFloat(speedControl.value));
+        const speed = parseFloat(speedControl.value);
+        if (!isNaN(speed) && speed > 0) {
+            lottieAnimation.setSpeed(speed);
+        } else {
+            lottieAnimation.setSpeed(1.0);
         }
     }
 
     // Speed control
     speedControl.addEventListener('input', function() {
-        if (lottieAnimation) {
-            lottieAnimation.setSpeed(parseFloat(this.value));
+        if (lottieAnimation && this.value) {
+            const speed = parseFloat(this.value);
+            if (!isNaN(speed) && speed > 0) {
+                lottieAnimation.setSpeed(speed);
+            }
+        }
+    });
+
+    speedControl.addEventListener('blur', function() {
+        if (!this.value || parseFloat(this.value) <= 0) {
+            this.value = 1.0;
+            if (lottieAnimation) {
+                lottieAnimation.setSpeed(1.0);
+            }
         }
     });
 
