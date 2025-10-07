@@ -100,17 +100,23 @@ class DefaultController extends Controller
     }
 
     /**
-     * Get asset URL for loading Lottie JSON data
+     * Save edited JSON data back to the asset
      */
-    public function actionGetAssetUrl(): Response
+    public function actionSaveAssetJson(): Response
     {
-        $this->requireAcceptsJson();
+        $this->requirePostRequest();
 
-        $assetId = Craft::$app->getRequest()->getParam('assetId');
+        $request = Craft::$app->getRequest();
+        $assetId = $request->getBodyParam('assetId');
+        $jsonDataString = $request->getBodyParam('jsonData');
 
-        if (!$assetId) {
+        // Parse the JSON string back to array
+        $jsonData = $jsonDataString ? json_decode($jsonDataString, true) : null;
+
+        if (!$assetId || !$jsonData) {
             return $this->asJson([
-                'error' => 'Asset ID is required'
+                'success' => false,
+                'error' => 'Asset ID and JSON data are required'
             ]);
         }
 
@@ -118,13 +124,54 @@ class DefaultController extends Controller
 
         if (!$asset) {
             return $this->asJson([
+                'success' => false,
                 'error' => 'Asset not found'
             ]);
         }
 
-        return $this->asJson([
-            'url' => $asset->getUrl(),
-            'filename' => $asset->filename,
-        ]);
+        try {
+            // Convert the data to JSON string
+            $jsonString = json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => 'Invalid JSON data: ' . json_last_error_msg()
+                ]);
+            }
+
+            // Create a temporary file with the new JSON content
+            $tempPath = Craft::$app->getPath()->getTempPath() . '/' . uniqid('lottie_') . '.json';
+            file_put_contents($tempPath, $jsonString);
+
+            // Replace the asset's file content
+            $asset->setVolumeId($asset->volumeId);
+            $asset->newFolderId = $asset->folderId;
+            $asset->tempFilePath = $tempPath;
+            $asset->filename = $asset->filename;
+
+            if (!Craft::$app->getElements()->saveElement($asset)) {
+                @unlink($tempPath);
+                return $this->asJson([
+                    'success' => false,
+                    'error' => 'Failed to save asset: ' . implode(', ', $asset->getErrorSummary(true))
+                ]);
+            }
+
+            // Clean up temp file
+            @unlink($tempPath);
+
+            return $this->asJson([
+                'success' => true,
+                'message' => 'Asset saved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Craft::error('Failed to save asset: ' . $e->getMessage(), __METHOD__);
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to save asset: ' . $e->getMessage()
+            ]);
+        }
     }
 }
