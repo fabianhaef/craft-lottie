@@ -142,29 +142,22 @@ function initLottieEditor() {
     let lottieAnimation = null;
     let lottieData = null;
 
-    console.log('Loading Lottie asset ID:', assetId);
-
     // Load the Lottie file via controller action
     const fetchUrl = '/actions/craft-lottie/default/get-asset-json?assetId=' + assetId;
-    console.log('Fetching from:', fetchUrl);
 
     fetch(fetchUrl)
         .then(response => {
-            console.log('Response status:', response.status, response.statusText);
             if (!response.ok) {
                 throw new Error('HTTP ' + response.status + ': ' + response.statusText);
             }
             return response.json();
         })
         .then(data => {
-            console.log('Lottie data loaded successfully');
             if (data.error) {
                 throw new Error(data.error);
             }
             lottieData = data;
-            console.log('About to render animation...');
             renderAnimation();
-            console.log('About to extract colors...');
             extractColors();
         })
         .catch(error => {
@@ -173,8 +166,6 @@ function initLottieEditor() {
         });
 
     function renderAnimation() {
-        console.log('renderAnimation called, lottie available:', typeof lottie !== 'undefined');
-
         if (lottieAnimation) {
             lottieAnimation.destroy();
         }
@@ -182,7 +173,6 @@ function initLottieEditor() {
         // Clear spinner
         previewContainer.innerHTML = '';
 
-        console.log('Loading animation with lottie.loadAnimation...');
         lottieAnimation = lottie.loadAnimation({
             container: previewContainer,
             renderer: 'svg',
@@ -190,8 +180,6 @@ function initLottieEditor() {
             autoplay: true,
             animationData: lottieData
         });
-
-        console.log('Animation loaded, instance:', lottieAnimation);
 
         // Apply speed
         if (speedControl.value) {
@@ -208,11 +196,8 @@ function initLottieEditor() {
 
     // Extract colors from Lottie JSON
     function extractColors() {
-        console.log('extractColors called');
         const colors = new Set();
         findColors(lottieData, colors);
-
-        console.log('Found colors:', Array.from(colors));
 
         colorContainer.innerHTML = '';
 
@@ -224,8 +209,6 @@ function initLottieEditor() {
         Array.from(colors).forEach((color, index) => {
             createColorPicker(color, index);
         });
-
-        console.log('Color pickers created');
     }
 
     function findColors(obj, colors, path = '') {
@@ -278,13 +261,17 @@ function initLottieEditor() {
         colorSwatch.type = 'color';
         colorSwatch.value = color;
         colorSwatch.className = 'lottie-color-swatch';
+        colorSwatch.dataset.currentColor = color;
 
         const colorLabel = document.createElement('span');
         colorLabel.textContent = `Color ${index + 1}: ${color}`;
 
-        colorSwatch.addEventListener('change', function(e) {
-            updateColor(color, e.target.value);
-            colorLabel.textContent = `Color ${index + 1}: ${e.target.value}`;
+        colorSwatch.addEventListener('input', function(e) {
+            const oldColor = colorSwatch.dataset.currentColor;
+            const newColor = e.target.value;
+            updateColor(oldColor, newColor);
+            colorSwatch.dataset.currentColor = newColor;
+            colorLabel.textContent = `Color ${index + 1}: ${newColor}`;
         });
 
         colorItem.appendChild(colorSwatch);
@@ -308,20 +295,39 @@ function initLottieEditor() {
         if (typeof obj !== 'object' || obj === null) return;
 
         for (const key in obj) {
-            if (key === 'c' && Array.isArray(obj[key]) && obj[key].length >= 3) {
-                const tolerance = 0.01;
-                if (Math.abs(obj[key][0] - oldRgb[0]) < tolerance &&
-                    Math.abs(obj[key][1] - oldRgb[1]) < tolerance &&
-                    Math.abs(obj[key][2] - oldRgb[2]) < tolerance) {
+            const value = obj[key];
 
-                    obj[key][0] = newRgb[0];
-                    obj[key][1] = newRgb[1];
-                    obj[key][2] = newRgb[2];
+            // Handle color properties: c, s, fc
+            if (['c', 's', 'fc'].includes(key) && Array.isArray(value)) {
+                // Keyframed color (has 'k' property)
+                if (value.k && Array.isArray(value.k) && value.k.length >= 3) {
+                    if (colorsMatch(value.k, oldRgb)) {
+                        value.k[0] = newRgb[0];
+                        value.k[1] = newRgb[1];
+                        value.k[2] = newRgb[2];
+                    }
                 }
-            } else if (typeof obj[key] === 'object') {
-                replaceColor(obj[key], oldRgb, newRgb);
+                // Direct color array
+                else if (value.length >= 3 && typeof value[0] === 'number') {
+                    if (colorsMatch(value, oldRgb)) {
+                        value[0] = newRgb[0];
+                        value[1] = newRgb[1];
+                        value[2] = newRgb[2];
+                    }
+                }
+            }
+            // Recurse into nested objects
+            else if (typeof value === 'object') {
+                replaceColor(value, oldRgb, newRgb);
             }
         }
+    }
+
+    function colorsMatch(color, targetRgb) {
+        const tolerance = 0.01;
+        return Math.abs(color[0] - targetRgb[0]) < tolerance &&
+               Math.abs(color[1] - targetRgb[1]) < tolerance &&
+               Math.abs(color[2] - targetRgb[2]) < tolerance;
     }
 }
 {% endjs %}
