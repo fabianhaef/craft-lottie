@@ -4,6 +4,7 @@ namespace vu\craftcraftlottie\services;
 
 use Craft;
 use craft\base\Component;
+use craft\elements\Asset;
 use craft\helpers\Json;
 use craft\helpers\Template;
 use Twig\Markup;
@@ -12,12 +13,19 @@ class LottieService extends Component
 {
     public function render($fieldValue, array $options = []): Markup
     {
-        if (!$fieldValue || !isset($fieldValue['data'])) {
+        // Handle Asset element or asset ID
+        $asset = null;
+        if ($fieldValue instanceof Asset) {
+            $asset = $fieldValue;
+        } elseif (is_numeric($fieldValue)) {
+            $asset = Craft::$app->getAssets()->getAssetById($fieldValue);
+        }
+
+        if (!$asset) {
             return Template::raw('');
         }
 
-        $animationData = $fieldValue['data'];
-        $speed = $fieldValue['speed'] ?? 1.0;
+        $speed = $options['speed'] ?? 1.0;
         
         // Merge default options
         $defaultOptions = [
@@ -46,40 +54,44 @@ class LottieService extends Component
         }
         
         // Generate JavaScript initialization
-        $jsOptions = [
-            'container' => $options['id'],
-            'renderer' => $options['renderer'],
-            'loop' => $options['loop'],
-            'autoplay' => $options['autoplay'],
-            'animationData' => $animationData
-        ];
-        
-        $jsOptionsJson = Json::encode($jsOptions);
-        
+        $containerId = $options['id'];
+        $assetId = $asset->id;
+        $renderer = $options['renderer'];
+        $loop = $options['loop'] ? 'true' : 'false';
+        $autoplay = $options['autoplay'] ? 'true' : 'false';
+        $uniqueId = str_replace('-', '_', $containerId);
+
         $html = <<<HTML
 <div{$attributeString}></div>
 <script>
 (function() {
-    function initLottie() {
-        if (typeof lottie === 'undefined') {
-            // Load lottie-web if not already loaded
-            var script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js';
-            script.onload = function() {
-                var animation = lottie.loadAnimation({$jsOptionsJson});
+    var lottieScriptLoaded = typeof lottie !== 'undefined';
+
+    function initLottie_{$uniqueId}() {
+        fetch('/actions/craft-lottie/default/get-asset-json?assetId={$assetId}')
+            .then(function(response) { return response.json(); })
+            .then(function(animationData) {
+                var animation = lottie.loadAnimation({
+                    container: document.getElementById('{$containerId}'),
+                    renderer: '{$renderer}',
+                    loop: {$loop},
+                    autoplay: {$autoplay},
+                    animationData: animationData
+                });
                 animation.setSpeed({$speed});
-            };
-            document.head.appendChild(script);
-        } else {
-            var animation = lottie.loadAnimation({$jsOptionsJson});
-            animation.setSpeed({$speed});
-        }
+            })
+            .catch(function(error) {
+                console.error('Failed to load Lottie animation:', error);
+            });
     }
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initLottie);
+
+    if (lottieScriptLoaded) {
+        initLottie_{$uniqueId}();
     } else {
-        initLottie();
+        var script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
+        script.onload = function() { initLottie_{$uniqueId}(); };
+        document.head.appendChild(script);
     }
 })();
 </script>
