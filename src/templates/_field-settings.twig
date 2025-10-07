@@ -1,15 +1,27 @@
-{% import "_includes/forms" as forms %}
+{% import "_includes/forms" as forms %} {% set volumeOptions = [] %} {% for
+volume in craft.app.volumes.allVolumes %} {% set volumeOptions =
+volumeOptions|merge([{ label: volume.name, value: 'volume:' ~ volume.uid }]) %}
+{% endfor %}
 
-{{ forms.textField({
+<div class="field">
+  {{ forms.field({
     label: "Default Upload Location"|t('craft-lottie'),
-    instructions: "The default folder for uploaded Lottie files."|t('craft-lottie'),
-    id: 'defaultUploadLocation',
-    name: 'defaultUploadLocation',
-    value: field.defaultUploadLocation ?? '',
-    placeholder: 'lottie-files'
-}) }}
+    instructions: "The default location where uploaded Lottie files will be stored."|t('craft-lottie'),
+    id: 'default-upload-location'
+}, forms.select({
+    id: 'default-upload-location-source',
+    name: 'defaultUploadLocationSource',
+    options: volumeOptions,
+    value: field.defaultUploadLocationSource
+}) ~ forms.text({
+    id: 'default-upload-location-subpath',
+    class: 'ltr',
+    name: 'defaultUploadLocationSubpath',
+    value: field.defaultUploadLocationSubpath,
+    placeholder: 'path/to/subfolder'|t('app')
+})) }}
 
-{{ forms.lightswitchField({
+  {{ forms.lightswitchField({
     label: "Enable Color Editing"|t('craft-lottie'),
     instructions: "Allow users to modify colors in the animation."|t('craft-lottie'),
     id: 'enableColorEditing',
@@ -17,10 +29,11 @@
     on: field.enableColorEditing ?? true
 }) }}
 
-{{ forms.lightswitchField({
+  {{ forms.lightswitchField({
     label: "Enable Speed Control"|t('craft-lottie'),
     instructions: "Allow users to adjust animation playback speed."|t('craft-lottie'),
     id: 'enableSpeedControl',
     name: 'enableSpeedControl',
     on: field.enableSpeedControl ?? true
 }) }}
+</div>

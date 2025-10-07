@@ -80,6 +80,7 @@ class Plugin extends BasePlugin
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
                 $event->rules['craft-lottie'] = 'craft-lottie/default/index';
+                $event->rules['craft-lottie/edit/<assetId:\d+>'] = 'craft-lottie/default/edit';
             }
         );
     }

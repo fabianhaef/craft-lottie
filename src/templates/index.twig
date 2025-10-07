@@ -3,29 +3,73 @@
 {% set title = "Lottie Animator" %}
 
 {% block content %}
-    <div class="readable">
-        <h1>{{ "Lottie Animator"|t('craft-lottie') }}</h1>
+    <div class="lottie-manager">
+        <div class="lottie-manager-header">
+            <h1>{{ "Lottie Animation Library"|t('craft-lottie') }}</h1>
+            <p>{{ "Manage and edit your Lottie animations. Select an animation below to preview and customize."|t('craft-lottie') }}</p>
+        </div>
 
-        <p>{{ "Welcome to Lottie Animator for Craft CMS. This plugin allows you to edit Lottie animations directly within Craft."|t('craft-lottie') }}</p>
-
-        <h2>{{ "Getting Started"|t('craft-lottie') }}</h2>
-
-        <ol>
-            <li>{{ "Create a new Lottie Animator field in Settings > Fields"|t('craft-lottie') }}</li>
-            <li>{{ "Add the field to your section or entry type"|t('craft-lottie') }}</li>
-            <li>{{ "Upload and edit Lottie animations in your entries"|t('craft-lottie') }}</li>
-        </ol>
-
-        <hr>
-
-        <h2>{{ "Features"|t('craft-lottie') }}</h2>
-
-        <ul>
-            <li>{{ "Upload Lottie JSON files"|t('craft-lottie') }}</li>
-            <li>{{ "Live preview of animations"|t('craft-lottie') }}</li>
-            <li>{{ "Edit colors directly in the control panel"|t('craft-lottie') }}</li>
-            <li>{{ "Adjust animation speed"|t('craft-lottie') }}</li>
-            <li>{{ "Easy frontend rendering with Twig"|t('craft-lottie') }}</li>
-        </ul>
+        {% if lottieAssets|length > 0 %}
+            <div class="lottie-list">
+                <table class="data fullwidth">
+                    <thead>
+                        <tr>
+                            <th>{{ "Filename"|t('craft-lottie') }}</th>
+                            <th>{{ "Volume"|t('craft-lottie') }}</th>
+                            <th>{{ "Date Created"|t('craft-lottie') }}</th>
+                            <th>{{ "Size"|t('craft-lottie') }}</th>
+                            <th class="thin">{{ "Actions"|t('craft-lottie') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in lottieAssets %}
+                            <tr data-asset-id="{{ asset.id }}">
+                                <td>
+                                    <a href="{{ url('craft-lottie/edit/' ~ asset.id) }}" class="lottie-asset-link">
+                                        <strong>{{ asset.filename }}</strong>
+                                    </a>
+                                </td>
+                                <td>{{ asset.volume.name }}</td>
+                                <td>{{ asset.dateCreated|date('Y-m-d H:i') }}</td>
+                                <td>{{ asset.size|filesize }}</td>
+                                <td class="thin">
+                                    <a href="{{ url('craft-lottie/edit/' ~ asset.id) }}" class="btn small">
+                                        {{ "Edit"|t('craft-lottie') }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="zilch">
+                <p>{{ "No Lottie files found."|t('craft-lottie') }}</p>
+                <p>{{ "Upload a .json Lottie animation file to your assets to get started."|t('craft-lottie') }}</p>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}
+
+{% css %}
+.lottie-manager-header {
+    margin-bottom: 30px;
+}
+
+.lottie-manager-header h1 {
+    margin-bottom: 8px;
+}
+
+.lottie-manager-header p {
+    color: #596673;
+    font-size: 14px;
+}
+
+.lottie-asset-link {
+    text-decoration: none;
+}
+
+.lottie-asset-link:hover {
+    text-decoration: underline;
+}
+{% endcss %}

@@ -1,0 +1,327 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Edit: " ~ asset.filename %}
+
+{% block content %}
+    <div class="lottie-editor">
+        <div class="lottie-editor-header">
+            <div class="flex">
+                <div class="flex-grow">
+                    <h1>{{ asset.filename }}</h1>
+                    <p class="light">{{ asset.volume.name }} • {{ asset.size|filesize }}</p>
+                </div>
+                <div>
+                    <a href="{{ url('craft-lottie') }}" class="btn">{{ "← Back to Library"|t('craft-lottie') }}</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="lottie-editor-content">
+            <div class="lottie-preview-section">
+                <h2>{{ "Preview"|t('craft-lottie') }}</h2>
+                <div id="lottie-preview" class="lottie-preview-container" data-asset-id="{{ asset.id }}">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <div class="lottie-controls-section">
+                <h2>{{ "Controls"|t('craft-lottie') }}</h2>
+
+                <!-- Speed Control -->
+                <div class="field">
+                    {{ forms.textField({
+                        label: "Animation Speed"|t('craft-lottie'),
+                        instructions: "Playback speed multiplier (1.0 = normal speed)"|t('craft-lottie'),
+                        id: 'speed-control',
+                        value: 1.0,
+                        type: 'number',
+                        min: 0.1,
+                        max: 5.0,
+                        step: 0.1
+                    }) }}
+                </div>
+
+                <!-- Color Editor -->
+                <div class="field">
+                    <label>{{ "Colors"|t('craft-lottie') }}</label>
+                    <p class="instructions">{{ "Click on a color to edit it"|t('craft-lottie') }}</p>
+                    <div id="color-picker-container" class="lottie-color-picker-container">
+                        <p class="light">{{ "Loading colors..."|t('craft-lottie') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% css %}
+.lottie-editor-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e3e5e8;
+}
+
+.lottie-editor-header h1 {
+    margin-bottom: 4px;
+}
+
+.lottie-editor-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+.lottie-preview-section h2,
+.lottie-controls-section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.lottie-preview-container {
+    width: 100%;
+    height: 500px;
+    background: #f9fafb;
+    border: 1px solid #e3e5e8;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lottie-color-picker-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.lottie-color-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #e3e5e8;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.lottie-color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+    .lottie-editor-content {
+        grid-template-columns: 1fr;
+    }
+}
+{% endcss %}
+
+{% js %}
+// Load lottie-web library dynamically
+const lottieScript = document.createElement('script');
+lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
+lottieScript.onload = function() {
+    initLottieEditor();
+};
+document.head.appendChild(lottieScript);
+
+function initLottieEditor() {
+    const previewContainer = document.getElementById('lottie-preview');
+    const speedControl = document.getElementById('speed-control');
+    const colorContainer = document.getElementById('color-picker-container');
+
+    // Get asset ID from data attribute
+    const assetId = previewContainer.getAttribute('data-asset-id');
+
+    let lottieAnimation = null;
+    let lottieData = null;
+
+    console.log('Loading Lottie asset ID:', assetId);
+
+    // Load the Lottie file via controller action
+    const fetchUrl = '/actions/craft-lottie/default/get-asset-json?assetId=' + assetId;
+    console.log('Fetching from:', fetchUrl);
+
+    fetch(fetchUrl)
+        .then(response => {
+            console.log('Response status:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Lottie data loaded successfully');
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            lottieData = data;
+            console.log('About to render animation...');
+            renderAnimation();
+            console.log('About to extract colors...');
+            extractColors();
+        })
+        .catch(error => {
+            console.error('Failed to load Lottie file:', error);
+            previewContainer.innerHTML = '<p style="color: #cf1124; padding: 20px;">Failed to load animation:<br>' + error.message + '</p>';
+        });
+
+    function renderAnimation() {
+        console.log('renderAnimation called, lottie available:', typeof lottie !== 'undefined');
+
+        if (lottieAnimation) {
+            lottieAnimation.destroy();
+        }
+
+        // Clear spinner
+        previewContainer.innerHTML = '';
+
+        console.log('Loading animation with lottie.loadAnimation...');
+        lottieAnimation = lottie.loadAnimation({
+            container: previewContainer,
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            animationData: lottieData
+        });
+
+        console.log('Animation loaded, instance:', lottieAnimation);
+
+        // Apply speed
+        if (speedControl.value) {
+            lottieAnimation.setSpeed(parseFloat(speedControl.value));
+        }
+    }
+
+    // Speed control
+    speedControl.addEventListener('input', function() {
+        if (lottieAnimation) {
+            lottieAnimation.setSpeed(parseFloat(this.value));
+        }
+    });
+
+    // Extract colors from Lottie JSON
+    function extractColors() {
+        console.log('extractColors called');
+        const colors = new Set();
+        findColors(lottieData, colors);
+
+        console.log('Found colors:', Array.from(colors));
+
+        colorContainer.innerHTML = '';
+
+        if (colors.size === 0) {
+            colorContainer.innerHTML = '<p class="light">No editable colors found in this animation</p>';
+            return;
+        }
+
+        Array.from(colors).forEach((color, index) => {
+            createColorPicker(color, index);
+        });
+
+        console.log('Color pickers created');
+    }
+
+    function findColors(obj, colors, path = '') {
+        if (typeof obj !== 'object' || obj === null) return;
+
+        for (const key in obj) {
+            const value = obj[key];
+
+            // Look for color arrays: 'c', 's' (stroke), 'fc' (fill color)
+            if (['c', 's', 'fc'].includes(key) && Array.isArray(value)) {
+                // Check if it's a keyframed color (has 'k' property)
+                if (value.k && Array.isArray(value.k) && value.k.length >= 3) {
+                    const colorHex = rgbArrayToHex(value.k);
+                    colors.add(colorHex);
+                }
+                // Check if it's a direct color array
+                else if (value.length >= 3 && typeof value[0] === 'number') {
+                    const colorHex = rgbArrayToHex(value);
+                    colors.add(colorHex);
+                }
+            }
+            // Recursively search nested objects
+            else if (typeof value === 'object') {
+                findColors(value, colors, path ? `${path}.${key}` : key);
+            }
+        }
+    }
+
+    function rgbArrayToHex(rgbArray) {
+        const r = Math.round(rgbArray[0] * 255);
+        const g = Math.round(rgbArray[1] * 255);
+        const b = Math.round(rgbArray[2] * 255);
+        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    }
+
+    function hexToRgbArray(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? [
+            parseInt(result[1], 16) / 255,
+            parseInt(result[2], 16) / 255,
+            parseInt(result[3], 16) / 255
+        ] : null;
+    }
+
+    function createColorPicker(color, index) {
+        const colorItem = document.createElement('div');
+        colorItem.className = 'lottie-color-item';
+
+        const colorSwatch = document.createElement('input');
+        colorSwatch.type = 'color';
+        colorSwatch.value = color;
+        colorSwatch.className = 'lottie-color-swatch';
+
+        const colorLabel = document.createElement('span');
+        colorLabel.textContent = `Color ${index + 1}: ${color}`;
+
+        colorSwatch.addEventListener('change', function(e) {
+            updateColor(color, e.target.value);
+            colorLabel.textContent = `Color ${index + 1}: ${e.target.value}`;
+        });
+
+        colorItem.appendChild(colorSwatch);
+        colorItem.appendChild(colorLabel);
+        colorContainer.appendChild(colorItem);
+    }
+
+    function updateColor(oldColor, newColor) {
+        if (oldColor === newColor) return;
+
+        const oldRgb = hexToRgbArray(oldColor);
+        const newRgb = hexToRgbArray(newColor);
+
+        if (!oldRgb || !newRgb) return;
+
+        replaceColor(lottieData, oldRgb, newRgb);
+        renderAnimation();
+    }
+
+    function replaceColor(obj, oldRgb, newRgb) {
+        if (typeof obj !== 'object' || obj === null) return;
+
+        for (const key in obj) {
+            if (key === 'c' && Array.isArray(obj[key]) && obj[key].length >= 3) {
+                const tolerance = 0.01;
+                if (Math.abs(obj[key][0] - oldRgb[0]) < tolerance &&
+                    Math.abs(obj[key][1] - oldRgb[1]) < tolerance &&
+                    Math.abs(obj[key][2] - oldRgb[2]) < tolerance) {
+
+                    obj[key][0] = newRgb[0];
+                    obj[key][1] = newRgb[1];
+                    obj[key][2] = newRgb[2];
+                }
+            } else if (typeof obj[key] === 'object') {
+                replaceColor(obj[key], oldRgb, newRgb);
+            }
+        }
+    }
+}
+{% endjs %}
