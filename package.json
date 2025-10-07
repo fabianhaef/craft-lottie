@@ -1,0 +1,16 @@
+{
+  "name": "craft-lottie",
+  "version": "1.0.0",
+  "description": "Lottie Animator for Craft cms",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@lottiefiles/lottie-js": "^0.4.2",
+    "lottie-web": "^5.13.0"
+  }
+}

@@ -1,0 +1,26 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.textField({
+    label: "Default Upload Location"|t('craft-lottie'),
+    instructions: "The default folder for uploaded Lottie files."|t('craft-lottie'),
+    id: 'defaultUploadLocation',
+    name: 'defaultUploadLocation',
+    value: field.defaultUploadLocation ?? '',
+    placeholder: 'lottie-files'
+}) }}
+
+{{ forms.lightswitchField({
+    label: "Enable Color Editing"|t('craft-lottie'),
+    instructions: "Allow users to modify colors in the animation."|t('craft-lottie'),
+    id: 'enableColorEditing',
+    name: 'enableColorEditing',
+    on: field.enableColorEditing ?? true
+}) }}
+
+{{ forms.lightswitchField({
+    label: "Enable Speed Control"|t('craft-lottie'),
+    instructions: "Allow users to adjust animation playback speed."|t('craft-lottie'),
+    id: 'enableSpeedControl',
+    name: 'enableSpeedControl',
+    on: field.enableSpeedControl ?? true
+}) }}

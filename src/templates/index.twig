@@ -1,0 +1,31 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Lottie Animator" %}
+
+{% block content %}
+    <div class="readable">
+        <h1>{{ "Lottie Animator"|t('craft-lottie') }}</h1>
+
+        <p>{{ "Welcome to Lottie Animator for Craft CMS. This plugin allows you to edit Lottie animations directly within Craft."|t('craft-lottie') }}</p>
+
+        <h2>{{ "Getting Started"|t('craft-lottie') }}</h2>
+
+        <ol>
+            <li>{{ "Create a new Lottie Animator field in Settings > Fields"|t('craft-lottie') }}</li>
+            <li>{{ "Add the field to your section or entry type"|t('craft-lottie') }}</li>
+            <li>{{ "Upload and edit Lottie animations in your entries"|t('craft-lottie') }}</li>
+        </ol>
+
+        <hr>
+
+        <h2>{{ "Features"|t('craft-lottie') }}</h2>
+
+        <ul>
+            <li>{{ "Upload Lottie JSON files"|t('craft-lottie') }}</li>
+            <li>{{ "Live preview of animations"|t('craft-lottie') }}</li>
+            <li>{{ "Edit colors directly in the control panel"|t('craft-lottie') }}</li>
+            <li>{{ "Adjust animation speed"|t('craft-lottie') }}</li>
+            <li>{{ "Easy frontend rendering with Twig"|t('craft-lottie') }}</li>
+        </ul>
+    </div>
+{% endblock %}

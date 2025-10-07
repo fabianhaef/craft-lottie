@@ -1,0 +1,37 @@
+{
+  "name": "10vu10/craft-craft-lottie",
+  "description": "Lottie Animator for Craft cms",
+  "type": "craft-plugin",
+  "license": "proprietary",
+  "support": {
+    "email": "admin@10vu10.ch"
+  },
+  "require": {
+    "php": ">=8.2",
+    "craftcms/cms": "^5.8.0"
+  },
+  "require-dev": {
+    "craftcms/phpstan": "dev-main"
+  },
+  "autoload": {
+    "psr-4": {
+      "10vu10\\craftcraftlottie\\": "src/"
+    }
+  },
+  "extra": {
+    "handle": "craft-lottie",
+    "name": "craft-lottie",
+    "developer": "10vu10",
+    "documentationUrl": ""
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    },
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true,
+      "craftcms/plugin-installer": true
+    }
+  }
+}

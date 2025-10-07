@@ -1,0 +1,65 @@
+.lottie-field {
+    margin: 20px 0;
+}
+
+.lottie-preview-container {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.lottie-preview {
+    border-radius: 4px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lottie-controls {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.lottie-color-editor {
+    margin: 15px 0;
+}
+
+.lottie-color-picker-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.lottie-color-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.lottie-color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.lottie-speed-control {
+    margin: 15px 0;
+}
+
+.lottie-upload .field {
+    margin-bottom: 20px;
+}
