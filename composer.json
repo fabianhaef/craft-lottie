@@ -15,7 +15,7 @@
   },
   "autoload": {
     "psr-4": {
-      "10vu10\\craftcraftlottie\\": "src/"
+      "vu\\craftlottie\\": "src/"
     }
   },
   "extra": {

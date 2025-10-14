@@ -1,6 +1,6 @@
 <?php
 
-namespace vu\craftcraftlottie\fields;
+namespace vu\craftlottie\fields;
 
 use Craft;
 use craft\base\ElementInterface;
@@ -88,7 +88,7 @@ class LottieAnimatorField extends Field
         $namespacedId = Craft::$app->getView()->namespaceInputId($id);
 
         // Register our field assets
-        Craft::$app->getView()->registerAssetBundle(\vu\craftcraftlottie\assets\LottieFieldAsset::class);
+        Craft::$app->getView()->registerAssetBundle(\vu\craftlottie\assets\LottieFieldAsset::class);
 
         return Craft::$app->getView()->renderTemplate('craft-lottie/_field-input', [
             'field' => $this,

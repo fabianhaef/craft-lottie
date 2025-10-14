@@ -1,14 +1,14 @@
 <?php
 
-namespace vu\craftcraftlottie;
+namespace vu\craftlottie;
 
 use Craft;
 use craft\base\Plugin as BasePlugin;
 use craft\events\RegisterComponentTypesEvent;
 use craft\services\Fields;
-use vu\craftcraftlottie\fields\LottieAnimatorField;
-use vu\craftcraftlottie\services\LottieService;
-use vu\craftcraftlottie\variables\LottieVariable;
+use vu\craftlottie\fields\LottieAnimatorField;
+use vu\craftlottie\services\LottieService;
+use vu\craftlottie\variables\LottieVariable;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use craft\events\RegisterUrlRulesEvent;

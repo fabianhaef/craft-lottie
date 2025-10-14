@@ -1,6 +1,6 @@
 <?php
 
-namespace vu\craftcraftlottie\services;
+namespace vu\craftlottie\services;
 
 use Craft;
 use craft\base\Component;

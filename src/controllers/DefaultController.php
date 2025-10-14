@@ -1,6 +1,6 @@
 <?php
 
-namespace vu\craftcraftlottie\controllers;
+namespace vu\craftlottie\controllers;
 
 use Craft;
 use craft\web\Controller;

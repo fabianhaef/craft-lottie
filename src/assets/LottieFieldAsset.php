@@ -1,6 +1,6 @@
 <?php
 
-namespace vu\craftcraftlottie\assets;
+namespace vu\craftlottie\assets;
 
 use craft\web\AssetBundle;
 use craft\web\assets\cp\CpAsset;

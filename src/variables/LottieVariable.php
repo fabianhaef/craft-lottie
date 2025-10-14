@@ -1,8 +1,8 @@
 <?php
 
-namespace vu\craftcraftlottie\variables;
+namespace vu\craftlottie\variables;
 
-use vu\craftcraftlottie\Plugin;
+use vu\craftlottie\Plugin;
 
 class LottieVariable
 {
