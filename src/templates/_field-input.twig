@@ -1,21 +1,65 @@
 {% import "_includes/forms" as forms %}
 
-<div class="lottie-field">
-    {% set asset = value %}
+<div class="lottie-field" id="{{ namespacedId }}-field">
+  {% if value is iterable and value.assetId is defined %} {% set assetId =
+  value.assetId %} {% set speed = value.speed ?? 1.0 %} {% set lottieData =
+  value.data ?? null %} {% endif %} {% set asset = assetId ?
+  craft.assets.id(assetId).one() : null %}
 
-    {{ forms.elementSelectField({
-        label: "Lottie Animation File"|t('craft-lottie'),
-        instructions: "Select or upload a Lottie JSON file from your assets"|t('craft-lottie'),
-        id: id,
+  {{ forms.elementSelectField({
+        id: namespacedId ~ '-asset',
         name: name ~ '[assetId]',
         elementType: 'craft\\elements\\Asset',
-        sources: field.defaultUploadLocationSource ? [field.defaultUploadLocationSource] : '*',
+        sources: field.defaultUploadLocationSource ? [field.defaultUploadLocationSource] : null,
         selectionLabel: "Select Lottie File"|t('craft-lottie'),
         criteria: {
-            filename: ['*.json']
+            kind: 'json'
         },
         limit: 1,
-        elements: asset ? [asset] : [],
+        elements: asset ? [asset] : null,
         viewMode: 'list'
     }) }}
+
+  <div class="lottie-preview-container" style="display: none">
+    <div class="lottie-preview"></div>
+  </div>
+
+  <input type="hidden" id="{{ namespacedId }}" name="{{ name }}" value="" />
 </div>
+
+<script>
+  (function() {
+      document.addEventListener('DOMContentLoaded', function() {
+          initLottieEditor();
+      });
+
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          setTimeout(initLottieEditor, 100);
+      }
+
+      function initLottieEditor() {
+          const fieldId = '{{ id|e('js') }}';
+          const namespacedId = '{{ namespacedId|e('js') }}';
+          const fieldContainer = document.getElementById(namespacedId + '-field');
+
+          if (!fieldContainer) {
+              console.warn('Lottie field container not found. Looking for:', namespacedId + '-field');
+              console.warn('fieldId:', fieldId, 'namespacedId:', namespacedId);
+              return;
+          }
+
+          if (fieldContainer.dataset.lottieInitialized) {
+              return;
+          }
+          fieldContainer.dataset.lottieInitialized = 'true';
+
+
+          new LottieEditor(namespacedId, {
+              assetId: {{ assetId ? assetId : 'null' }},
+              existingData: {{ lottieData ? lottieData|json_encode|raw : 'null' }},
+              enableColorEditing: {{ field.enableColorEditing ? 'true' : 'false' }},
+              enableSpeedControl: {{ field.enableSpeedControl ? 'true' : 'false' }}
+          });
+      }
+  })();
+</script>

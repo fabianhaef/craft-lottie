@@ -10,71 +10,111 @@ class LottieEditor {
         this.lottieData = null;
         this.previewInstance = null;
         this.currentAssetId = options.assetId || null;
-
-        console.log('LottieEditor initialized:', {
-            fieldId: fieldId,
-            assetId: options.assetId,
-            hasExistingData: !!options.existingData
-        });
+        this.enableColorEditing = options.enableColorEditing || false;
 
         this.init();
     }
 
     init() {
-        console.log('Looking for elements with fieldId:', this.fieldId);
+        const fieldContainer = document.getElementById(this.fieldId + '-field');
 
-        // Try to find the asset selector input - it might have various IDs
-        this.assetSelectInput = document.querySelector(`input[id="${this.fieldId}-asset"]`) ||
-                                document.querySelector(`input[name="lottie-temp-asset"]`);
+        if (!fieldContainer) {
+            console.error('Field container not found:', this.fieldId + '-field');
+            return;
+        }
 
-        this.valueInput = document.querySelector(`input[id="${this.fieldId}"]`);
-        this.previewContainer = document.querySelector('.lottie-preview-container');
-        this.previewElement = document.querySelector(`#${this.fieldId}-preview`);
-        this.controlsContainer = document.querySelector('.lottie-controls');
-        this.speedInput = document.querySelector(`input[id="${this.fieldId}-speed"]`);
-        this.colorsContainer = document.querySelector(`#${this.fieldId}-colors`);
+        this.assetSelectInput = fieldContainer.querySelector('input[name*="[assetId]"]');
 
-        console.log('Found elements:', {
-            assetSelectInput: this.assetSelectInput?.id,
-            valueInput: this.valueInput?.id,
-            speedInput: this.speedInput?.id
-        });
+        this.valueInput = fieldContainer.querySelector(`input[id="${this.fieldId}"]`) ||
+                         fieldContainer.querySelector('input[type="hidden"][name$="[lottie]"]');
+
+        this.previewContainer = fieldContainer.querySelector('.lottie-preview-container');
+        this.previewElement = fieldContainer.querySelector('.lottie-preview');
+        this.speedInput = fieldContainer.querySelector(`input[id="${this.fieldId}-speed"]`) ||
+                         fieldContainer.querySelector('input[name$="[speed]"]');
+        this.colorsContainer = fieldContainer.querySelector(`#${this.fieldId}-colors`);
 
         // Listen for asset selection changes
         if (this.assetSelectInput) {
-            console.log('Asset select input found:', this.assetSelectInput.id);
+            this.assetSelectInput.addEventListener('change', () => {
+                this.handleAssetChange();
+            });
 
-            // Use Craft's element selector events
-            const elementSelect = this.assetSelectInput.closest('.elementselect');
-            if (elementSelect) {
-                console.log('Element select container found');
-
-                // Watch for changes in the hidden input value
-                const observer = new MutationObserver(() => {
-                    console.log('Asset input value changed to:', this.assetSelectInput.value);
+            let lastValue = this.assetSelectInput.value;
+            const pollInterval = setInterval(() => {
+                const currentValue = this.assetSelectInput.value;
+                if (currentValue !== lastValue) {
+                    lastValue = currentValue;
                     this.handleAssetChange();
-                });
-                observer.observe(this.assetSelectInput, {
-                    attributes: true,
-                    attributeFilter: ['value']
-                });
+                }
+            }, 500);
 
-                // Also listen for selectElements event
-                $(elementSelect).on('selectElements', () => {
-                    console.log('selectElements event fired');
-                    setTimeout(() => this.handleAssetChange(), 100);
-                });
+            this.pollInterval = pollInterval;
 
-                // And removeElements event
-                $(elementSelect).on('removeElements', () => {
-                    console.log('removeElements event fired');
-                    this.handleRemoveAsset();
-                });
-            } else {
-                console.warn('Could not find .elementselect container');
+            this.assetSelectInput.addEventListener('input', () => {
+                this.handleAssetChange();
+            });
+
+            const elementSelect = this.assetSelectInput.closest('.elementselect') ||
+                                 fieldContainer.querySelector('.elementselect');
+
+            if (elementSelect) {
+                const elementsContainer = elementSelect.querySelector('.elements');
+                if (elementsContainer) {
+                    const chipObserver = new MutationObserver((mutations) => {
+                        const chips = elementsContainer.querySelectorAll('.element');
+                        if (chips.length > 0) {
+                            const assetId = chips[0].getAttribute('data-id');
+                            if (assetId && assetId !== this.currentAssetId) {
+                                this.currentAssetId = assetId;
+                                this.saveData();
+                                this.loadAssetData(assetId);
+                            }
+                        } else if (this.currentAssetId) {
+                            this.handleRemoveAsset();
+                        }
+                    });
+
+                    chipObserver.observe(elementsContainer, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+
+                if (typeof $ !== 'undefined') {
+                    $(elementSelect).on('selectElements', () => {
+                        setTimeout(() => {
+                            const chips = elementSelect.querySelectorAll('.element');
+                            if (chips.length > 0) {
+                                const assetId = chips[0].getAttribute('data-id');
+                                if (assetId && assetId !== this.currentAssetId) {
+                                    this.currentAssetId = assetId;
+                                    this.saveData();
+                                    this.loadAssetData(assetId);
+                                }
+                            }
+                        }, 100);
+                    });
+
+                    $(elementSelect).on('removeElements', () => {
+                        this.handleRemoveAsset();
+                    });
+                }
+
+                const existingChips = elementSelect.querySelectorAll('.element');
+                if (existingChips.length > 0) {
+                    const assetId = existingChips[0].getAttribute('data-id');
+                    if (assetId && !this.currentAssetId) {
+                        this.currentAssetId = assetId;
+                        this.loadAssetData(assetId);
+                    }
+                }
             }
-        } else {
-            console.warn('Could not find asset select input');
+
+            if (this.assetSelectInput.value && !this.currentAssetId) {
+                this.currentAssetId = this.assetSelectInput.value;
+                this.loadAssetData(this.currentAssetId);
+            }
         }
 
         if (this.speedInput) {
@@ -93,21 +133,17 @@ class LottieEditor {
 
     handleAssetChange() {
         if (!this.assetSelectInput) {
-            console.warn('handleAssetChange: assetSelectInput not found');
             return;
         }
 
         const assetId = this.assetSelectInput.value;
-        console.log('handleAssetChange called, assetId:', assetId, 'current:', this.currentAssetId);
 
         if (assetId && assetId !== this.currentAssetId) {
             this.currentAssetId = assetId;
-            console.log('Asset changed to:', assetId);
-
-            // Immediately save assetId to the value field
             this.saveData();
-
             this.loadAssetData(assetId);
+        } else if (!assetId && this.currentAssetId) {
+            this.handleRemoveAsset();
         }
     }
 
@@ -115,7 +151,6 @@ class LottieEditor {
         this.currentAssetId = null;
         this.lottieData = null;
         this.previewContainer.style.display = 'none';
-        this.controlsContainer.style.display = 'none';
 
         if (this.previewInstance) {
             this.previewInstance.destroy();
@@ -130,40 +165,24 @@ class LottieEditor {
 
     async loadAssetData(assetId) {
         try {
-            // Fetch the asset data from Craft
-            const response = await fetch(`/actions/assets/thumb?assetId=${assetId}&width=1&height=1`);
+            const response = await fetch(`/actions/craft-lottie/default/get-asset-json?assetId=${assetId}`);
 
-            // Get the actual asset URL
-            const assetElement = document.querySelector(`[data-id="${assetId}"]`);
-            let assetUrl = null;
-
-            if (assetElement) {
-                assetUrl = assetElement.getAttribute('data-url');
+            if (!response.ok) {
+                throw new Error(`Failed to fetch asset: ${response.status} ${response.statusText}`);
             }
 
-            if (!assetUrl) {
-                // Try to construct URL from asset ID
-                const urlResponse = await fetch(`/actions/craft-lottie/default/get-asset-url?assetId=${assetId}`);
-                if (urlResponse.ok) {
-                    const urlData = await urlResponse.json();
-                    assetUrl = urlData.url;
-                }
-            }
+            const jsonData = await response.json();
 
-            if (assetUrl) {
-                const jsonResponse = await fetch(assetUrl);
-                const jsonData = await jsonResponse.json();
-
-                if (this.validateLottieData(jsonData)) {
-                    this.lottieData = jsonData;
-                    this.loadAnimation();
-                } else {
-                    alert('The selected file does not appear to be a valid Lottie animation.');
-                }
+            if (this.validateLottieData(jsonData)) {
+                this.lottieData = jsonData;
+                this.loadAnimation();
+            } else {
+                console.error('Invalid Lottie data structure');
+                alert('The selected file does not appear to be a valid Lottie animation.');
             }
         } catch (error) {
             console.error('Error loading asset data:', error);
-            alert('Failed to load the Lottie file. Please try again.');
+            alert('Failed to load the Lottie file: ' + error.message);
         }
     }
 
@@ -177,18 +196,16 @@ class LottieEditor {
     }
 
     loadAnimation() {
-        if (!this.lottieData) return;
+        if (!this.lottieData || !this.previewContainer || !this.previewElement) {
+            return;
+        }
 
-        // Show preview and controls
         this.previewContainer.style.display = 'block';
-        this.controlsContainer.style.display = 'block';
 
-        // Load animation in preview using lottie-web
         if (this.previewInstance) {
             this.previewInstance.destroy();
         }
 
-        // Import lottie-web from node_modules
         if (typeof lottie === 'undefined') {
             this.loadLottieWeb(() => {
                 this.renderPreview();
@@ -197,45 +214,46 @@ class LottieEditor {
             this.renderPreview();
         }
 
-        // Extract and show colors
         this.extractColors();
-        
-        // Save to hidden field
         this.saveData();
     }
 
     loadLottieWeb(callback) {
-        // Load lottie-web from node_modules
         const script = document.createElement('script');
-        script.src = '/node_modules/lottie-web/build/player/lottie.min.js';
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
         script.onload = callback;
         script.onerror = () => {
-            // Fallback to CDN
-            const fallbackScript = document.createElement('script');
-            fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js';
-            fallbackScript.onload = callback;
-            document.head.appendChild(fallbackScript);
+            console.error('Failed to load lottie-web library');
+            alert('Failed to load the Lottie animation library. Please check your internet connection.');
         };
         document.head.appendChild(script);
     }
 
     renderPreview() {
-        this.previewInstance = lottie.loadAnimation({
-            container: this.previewElement,
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            animationData: this.lottieData
-        });
+        if (!this.previewElement) {
+            return;
+        }
 
-        // Apply speed if set
-        if (this.speedInput && this.speedInput.value) {
-            this.previewInstance.setSpeed(parseFloat(this.speedInput.value));
+        try {
+            this.previewInstance = lottie.loadAnimation({
+                container: this.previewElement,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                animationData: this.lottieData
+            });
+
+            if (this.speedInput && this.speedInput.value) {
+                const speed = parseFloat(this.speedInput.value);
+                this.previewInstance.setSpeed(speed);
+            }
+        } catch (error) {
+            console.error('Error rendering preview:', error);
         }
     }
 
     extractColors() {
-        if (!this.options.enableColorEditing || !this.colorsContainer) return;
+        if (!this.enableColorEditing || !this.colorsContainer) return;
 
         const colors = new Set();
         this.findColors(this.lottieData, colors);
@@ -346,16 +364,16 @@ class LottieEditor {
     }
 
     saveData() {
-        if (!this.valueInput) return;
+        if (!this.valueInput) {
+            return;
+        }
 
-        // Build the complete value object
         const value = {
             assetId: this.currentAssetId || null,
             data: this.lottieData || null,
             speed: this.speedInput ? parseFloat(this.speedInput.value) : 1.0
         };
 
-        console.log('Saving field data:', value);
         this.valueInput.value = JSON.stringify(value);
     }
 }

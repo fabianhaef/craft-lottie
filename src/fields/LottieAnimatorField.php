@@ -24,7 +24,7 @@ class LottieAnimatorField extends Field
 
     public function getContentColumnType(): array|string
     {
-        return Schema::TYPE_INTEGER;
+        return Schema::TYPE_TEXT;
     }
 
     public function normalizeValue(mixed $value, ?ElementInterface $element = null): mixed
@@ -33,11 +33,7 @@ class LottieAnimatorField extends Field
             return null;
         }
 
-        // If it's already an Asset element, return it
-        if ($value instanceof \craft\elements\Asset) {
-            return $value;
-        }
-
+        // If it's a string, decode it
         if (is_string($value)) {
             try {
                 $value = Json::decode($value);
@@ -47,36 +43,29 @@ class LottieAnimatorField extends Field
             }
         }
 
-        // Extract the asset ID
-        $assetId = null;
-
-        if (is_array($value)) {
-            // Extract assetId - it comes as an array from elementSelectField
-            if (isset($value['assetId'])) {
-                if (is_array($value['assetId']) && !empty($value['assetId'])) {
-                    $assetId = $value['assetId'][0];
-                } elseif (is_numeric($value['assetId'])) {
-                    $assetId = $value['assetId'];
-                }
-            }
-        } elseif (is_numeric($value)) {
-            // It's already an asset ID
-            $assetId = $value;
-        }
-
-        // If no assetId, return null
-        if (!$assetId) {
+        // If it's not an array at this point, return null
+        if (!is_array($value)) {
             return null;
         }
 
-        // Return the Asset element directly
-        return Craft::$app->getAssets()->getAssetById((int)$assetId);
+        // Return the value object which contains: assetId, data (modified JSON), speed
+        return $value;
     }
 
     public function serializeValue(mixed $value, ?ElementInterface $element = null): mixed
     {
-        if ($value instanceof \craft\elements\Asset) {
-            return $value->id;
+        if ($value === null || $value === '' || $value === []) {
+            return null;
+        }
+
+        // If it's already a string (JSON), return it
+        if (is_string($value)) {
+            return $value;
+        }
+
+        // Encode array to JSON
+        if (is_array($value)) {
+            return Json::encode($value);
         }
 
         return $value;
@@ -89,6 +78,9 @@ class LottieAnimatorField extends Field
 
         // Register our field assets
         Craft::$app->getView()->registerAssetBundle(\vu\craftlottie\assets\LottieFieldAsset::class);
+
+        // Debug log the value
+        Craft::info('LottieAnimatorField value type: ' . gettype($value) . ', value: ' . print_r($value, true), __METHOD__);
 
         return Craft::$app->getView()->renderTemplate('craft-lottie/_field-input', [
             'field' => $this,

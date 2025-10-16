@@ -14,7 +14,7 @@ class DefaultController extends Controller
     /**
      * @var bool Whether to allow anonymous access
      */
-    protected array|bool|int $allowAnonymous = false;
+    protected array|bool|int $allowAnonymous = ['get-asset-json'];
 
     /**
      * Main index action - List all Lottie files
