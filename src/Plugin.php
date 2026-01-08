@@ -3,6 +3,7 @@
 namespace vu\craftlottie;
 
 use Craft;
+use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
@@ -10,6 +11,7 @@ use craft\services\Fields;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use vu\craftlottie\fields\LottieAnimatorField;
+use vu\craftlottie\models\Settings;
 use vu\craftlottie\services\LottieService;
 use vu\craftlottie\services\LottieValidator;
 use vu\craftlottie\variables\LottieVariable;
@@ -43,6 +45,8 @@ class Plugin extends BasePlugin
     public function init(): void
     {
         parent::init();
+
+        $this->controllerNamespace = 'vu\\craftlottie\\controllers';
 
         $this->attachEventHandlers();
         $this->registerCpRoutes();
@@ -83,6 +87,8 @@ class Plugin extends BasePlugin
             function(RegisterUrlRulesEvent $event) {
                 $event->rules['craft-lottie'] = 'craft-lottie/default/index';
                 $event->rules['craft-lottie/edit/<assetId:\d+>'] = 'craft-lottie/default/edit';
+                $event->rules['craft-lottie/settings'] = 'craft-lottie/settings/index';
+                $event->rules['craft-lottie/settings/save'] = 'craft-lottie/settings/save';
             }
         );
     }
@@ -119,6 +125,56 @@ class Plugin extends BasePlugin
         $item['icon'] = '@craft-lottie/icon.svg';
         $item['url'] = 'craft-lottie';
 
+        // Add settings subnav item
+        $item['subnav'] = [
+            'library' => [
+                'label' => Craft::t('craft-lottie', 'Library'),
+                'url' => 'craft-lottie',
+            ],
+            'settings' => [
+                'label' => Craft::t('craft-lottie', 'Settings'),
+                'url' => 'craft-lottie/settings',
+            ],
+        ];
+
         return $item;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function createSettingsModel(): ?Model
+    {
+        return Craft::createObject(Settings::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function settingsHtml(): ?string
+    {
+        return Craft::$app->view->renderTemplate('craft-lottie/settings', [
+            'plugin' => $this,
+            'settings' => $this->getSettings(),
+        ]);
+    }
+
+    /**
+     * Get the plugin settings
+     *
+     * @return Settings
+     */
+    public function getSettings(): Settings
+    {
+        /** @var Settings */
+        return parent::getSettings();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSettingsResponse(): mixed
+    {
+        return Craft::$app->getResponse()->redirect('craft-lottie/settings');
     }
 }

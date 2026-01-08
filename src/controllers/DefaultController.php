@@ -21,15 +21,37 @@ class DefaultController extends Controller
      */
     public function actionIndex(): Response
     {
-        // Get all JSON assets (potential Lottie files)
-        $lottieAssets = \craft\elements\Asset::find()
+        $plugin = \vu\craftlottie\Plugin::getInstance();
+        $settings = $plugin->getSettings();
+        
+        // Get configured volumes
+        $volumeIds = $settings->lottieVolumes ?? [];
+        
+        // Build asset query
+        $assetQuery = \craft\elements\Asset::find()
             ->kind('json')
-            ->orderBy(['dateCreated' => SORT_DESC])
-            ->all();
+            ->orderBy(['dateCreated' => SORT_DESC]);
+        
+        // Filter by volumes if configured
+        if (!empty($volumeIds)) {
+            $assetQuery->volumeId($volumeIds);
+        }
+        
+        $lottieAssets = $assetQuery->all();
+        
+        // Get all volumes for upload dropdown
+        $allVolumes = Craft::$app->getVolumes()->getAllVolumes();
+        $primaryVolume = null;
+        if (!empty($volumeIds)) {
+            $primaryVolume = Craft::$app->getVolumes()->getVolumeById($volumeIds[0]);
+        }
 
         return $this->renderTemplate('craft-lottie/index', [
             'title' => 'Lottie Animator',
             'lottieAssets' => $lottieAssets,
+            'allVolumes' => $allVolumes,
+            'configuredVolumes' => $volumeIds,
+            'primaryVolume' => $primaryVolume,
         ]);
     }
 
@@ -271,6 +293,121 @@ class DefaultController extends Controller
                 'success' => false,
                 'error' => 'Failed to save asset: ' . $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Upload a Lottie file to the configured volume
+     */
+    public function actionUpload(): Response
+    {
+        $this->requirePostRequest();
+        
+        $plugin = \vu\craftlottie\Plugin::getInstance();
+        $settings = $plugin->getSettings();
+        
+        // Get configured volumes
+        $volumeIds = $settings->lottieVolumes ?? [];
+        
+        if (empty($volumeIds)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('craft-lottie', 'No volumes configured. Please configure Lottie volumes in plugin settings.'),
+            ])->setStatusCode(400);
+        }
+        
+        // Use the first configured volume as the upload target
+        $volume = Craft::$app->getVolumes()->getVolumeById($volumeIds[0]);
+        
+        if (!$volume) {
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('craft-lottie', 'Configured volume not found.'),
+            ])->setStatusCode(400);
+        }
+        
+        // Get the uploaded file
+        $uploadedFile = Craft::$app->getRequest()->getUploadedFile('file');
+        
+        if (!$uploadedFile || $uploadedFile->hasError) {
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('craft-lottie', 'File upload failed.'),
+            ])->setStatusCode(400);
+        }
+        
+        // Validate file extension
+        $extension = strtolower($uploadedFile->getExtension());
+        if ($extension !== 'json') {
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('craft-lottie', 'Only JSON files are allowed.'),
+            ])->setStatusCode(400);
+        }
+        
+        try {
+            // Read file contents to validate it's a Lottie file
+            $contents = file_get_contents($uploadedFile->tempName);
+            
+            if (empty($contents)) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('craft-lottie', 'The uploaded file is empty.'),
+                ])->setStatusCode(400);
+            }
+            
+            // Validate it's a valid Lottie file
+            $validation = $plugin->getLottieValidator()->validateLottieFile($contents);
+            
+            if (!$validation['valid']) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('craft-lottie', $validation['error']),
+                ])->setStatusCode(400);
+            }
+            
+            // Get the root folder for the volume
+            $folder = Craft::$app->getAssets()->getRootFolderByVolumeId($volume->id);
+            
+            if (!$folder) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('craft-lottie', 'Could not find root folder for volume.'),
+                ])->setStatusCode(500);
+            }
+            
+            // Create asset
+            $asset = new \craft\elements\Asset();
+            $asset->tempFilePath = $uploadedFile->tempName;
+            $asset->filename = $uploadedFile->name;
+            $asset->newFolderId = $folder->id;
+            $asset->volumeId = $volume->id;
+            $asset->avoidFilenameConflicts = true;
+            
+            // Save the asset
+            if (!Craft::$app->getElements()->saveElement($asset)) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('craft-lottie', 'Failed to save asset: {errors}', [
+                        'errors' => implode(', ', $asset->getErrorSummary(true))
+                    ]),
+                ])->setStatusCode(500);
+            }
+            
+            return $this->asJson([
+                'success' => true,
+                'assetId' => $asset->id,
+                'filename' => $asset->filename,
+                'message' => Craft::t('craft-lottie', 'File uploaded successfully.'),
+            ]);
+        } catch (\Exception $e) {
+            Craft::error('Failed to upload Lottie file: ' . $e->getMessage(), __METHOD__);
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('craft-lottie', 'Failed to upload file: {message}', [
+                    'message' => $e->getMessage()
+                ]),
+            ])->setStatusCode(500);
         }
     }
 }

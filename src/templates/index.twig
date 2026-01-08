@@ -5,11 +5,34 @@
 {% block content %}
     <div class="lottie-manager">
         <div class="lottie-manager-header">
-            <h1>{{ "Lottie Animation Library"|t('craft-lottie') }}</h1>
-            <p>{{ "Manage and edit your Lottie animations. Select an animation below to preview and customize."|t('craft-lottie') }}</p>
+            <div class="flex">
+                <div class="flex-grow">
+                    <h1>{{ "Lottie Animation Library"|t('craft-lottie') }}</h1>
+                    <p>{{ "Manage and edit your Lottie animations. Select an animation below to preview and customize."|t('craft-lottie') }}</p>
+                </div>
+                {% if primaryVolume %}
+                    <div class="lottie-upload-section">
+                        <form id="lottie-upload-form" enctype="multipart/form-data">
+                            <input type="file" id="lottie-file-input" accept=".json" style="display: none;">
+                            <button type="button" id="lottie-upload-btn" class="btn submit">
+                                {{ "Upload Lottie File"|t('craft-lottie') }}
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
         </div>
 
-        {% if lottieAssets|length > 0 %}
+        {% if configuredVolumes is empty %}
+            <div class="pane">
+                <div class="warning">
+                    <p><strong>{{ "No volumes configured"|t('craft-lottie') }}</strong></p>
+                    <p>{{ "Please configure at least one volume in"|t('craft-lottie') }} <a href="{{ url('settings/plugins/craft-lottie') }}">{{ "plugin settings"|t('craft-lottie') }}</a> {{ "to use the Lottie library."|t('craft-lottie') }}</p>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if configuredVolumes is not empty and lottieAssets|length > 0 %}
             <div class="lottie-list">
                 <table class="data fullwidth">
                     <thead>
@@ -42,10 +65,14 @@
                     </tbody>
                 </table>
             </div>
-        {% else %}
+        {% elseif configuredVolumes is not empty %}
             <div class="zilch">
                 <p>{{ "No Lottie files found."|t('craft-lottie') }}</p>
-                <p>{{ "Upload a .json Lottie animation file to your assets to get started."|t('craft-lottie') }}</p>
+                {% if primaryVolume %}
+                    <p>{{ "Upload a .json Lottie animation file using the button above to get started."|t('craft-lottie') }}</p>
+                {% else %}
+                    <p>{{ "Upload a .json Lottie animation file to your assets to get started."|t('craft-lottie') }}</p>
+                {% endif %}
             </div>
         {% endif %}
     </div>
@@ -54,6 +81,17 @@
 {% css %}
 .lottie-manager-header {
     margin-bottom: 30px;
+}
+
+.lottie-manager-header .flex {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.lottie-manager-header .flex-grow {
+    flex: 1;
 }
 
 .lottie-manager-header h1 {
@@ -65,6 +103,10 @@
     font-size: 14px;
 }
 
+.lottie-upload-section {
+    flex-shrink: 0;
+}
+
 .lottie-asset-link {
     text-decoration: none;
 }
@@ -72,4 +114,94 @@
 .lottie-asset-link:hover {
     text-decoration: underline;
 }
+
+.warning {
+    padding: 16px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    color: #856404;
+}
+
+.warning p {
+    margin: 0 0 8px 0;
+}
+
+.warning p:last-child {
+    margin-bottom: 0;
+}
+
+.warning a {
+    color: #856404;
+    text-decoration: underline;
+}
 {% endcss %}
+
+{% js %}
+{% if primaryVolume %}
+(function() {
+    const uploadBtn = document.getElementById('lottie-upload-btn');
+    const fileInput = document.getElementById('lottie-file-input');
+    const uploadForm = document.getElementById('lottie-upload-form');
+    
+    if (!uploadBtn || !fileInput) return;
+    
+    uploadBtn.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Validate file extension
+        if (!file.name.toLowerCase().endsWith('.json')) {
+            Craft.cp.displayError('{{ "Only JSON files are allowed."|t('craft-lottie') }}');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Show loading state
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '{{ "Uploading..."|t('craft-lottie') }}';
+        
+        // Create FormData
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('{{ craft.app.request.csrfParam }}', '{{ craft.app.request.csrfToken }}');
+        
+        // Upload file
+        fetch('/actions/craft-lottie/default/upload', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Craft.cp.displayNotice('{{ "File uploaded successfully."|t('craft-lottie') }}');
+                // Reload page to show new file
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                Craft.cp.displayError(data.error || '{{ "Upload failed."|t('craft-lottie') }}');
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '{{ "Upload Lottie File"|t('craft-lottie') }}';
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            Craft.cp.displayError('{{ "Upload failed. Please try again."|t('craft-lottie') }}');
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = '{{ "Upload Lottie File"|t('craft-lottie') }}';
+        });
+        
+        // Reset file input
+        fileInput.value = '';
+    });
+})();
+{% endif %}
+{% endjs %}

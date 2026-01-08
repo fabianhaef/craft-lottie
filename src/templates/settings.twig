@@ -1,0 +1,41 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Craft Lottie Settings"|t('craft-lottie') %}
+
+{% set crumbs = [
+    { label: plugin.name, url: url('craft-lottie') },
+    { label: "Settings"|t('app'), url: url('craft-lottie/settings') }
+] %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('craft-lottie/settings/save') }}
+        {{ redirectInput('craft-lottie/settings') }}
+
+        <input type="hidden" name="pluginHandle" value="craft-lottie">
+
+        <h2>{{ "Lottie Volume Configuration"|t('craft-lottie') }}</h2>
+        <p class="light">{{ "Select one or more volumes where Lottie animation files should be stored. Only JSON files from these volumes will appear in the Lottie library."|t('craft-lottie') }}</p>
+
+        {% set allVolumes = craft.app.volumes.getAllVolumes() %}
+        {% set volumeOptions = {} %}
+        {% for volume in allVolumes %}
+            {% set volumeOptions = volumeOptions|merge({(volume.id): volume.name}) %}
+        {% endfor %}
+
+        {{ forms.checkboxSelectField({
+            label: "Lottie Volumes"|t('craft-lottie'),
+            instructions: "Select the volumes where Lottie files are stored. Files uploaded via the dashboard will be saved to the first selected volume."|t('craft-lottie'),
+            name: 'settings[lottieVolumes]',
+            options: volumeOptions,
+            values: settings.lottieVolumes ?? [],
+            errors: settings.getErrors('lottieVolumes')
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ "Save"|t('app') }}</button>
+        </div>
+    </form>
+{% endblock %}

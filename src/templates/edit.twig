@@ -710,17 +710,42 @@ function initLottieEditor() {
             // Remove our internal flags before rendering
             cleanLottieData(animationDataCopy);
             
-            // #region agent log - Test: Remove text layers to see if they're the problem
-            const textLayerCount = animationDataCopy.layers?.filter(l => l.ty === 5).length || 0;
-            console.log('[DEBUG-J] Testing by REMOVING text layers. Count:', textLayerCount);
-            
-            // TEMPORARILY remove text layers to test if they're causing the issue
-            if (animationDataCopy.layers) {
-                const originalCount = animationDataCopy.layers.length;
-                animationDataCopy.layers = animationDataCopy.layers.filter(l => l.ty !== 5);
-                console.log('[DEBUG-J] Removed text layers. Before:', originalCount, 'After:', animationDataCopy.layers.length);
+            // #region agent log - FIX: Add missing required properties to text layers
+            // Text layers need t.p, t.m, and t.a to work properly with lottie-web
+            if (animationDataCopy.layers && Array.isArray(animationDataCopy.layers)) {
+                animationDataCopy.layers.forEach((layer, idx) => {
+                    if (layer.ty === 5 && layer.t) {
+                        console.log(`[DEBUG-FIX] Fixing text layer ${idx}, current t keys:`, Object.keys(layer.t));
+                        
+                        // Add empty text path if missing
+                        if (!layer.t.p) {
+                            layer.t.p = {};
+                            console.log(`[DEBUG-FIX] Added empty t.p to layer ${idx}`);
+                        }
+                        
+                        // Add text more options if missing
+                        if (!layer.t.m) {
+                            layer.t.m = {
+                                g: 1,
+                                a: { a: 0, k: [0, 0], ix: 2 }
+                            };
+                            console.log(`[DEBUG-FIX] Added t.m to layer ${idx}`);
+                        }
+                        
+                        // Add empty text animators array if missing
+                        if (!layer.t.a) {
+                            layer.t.a = [];
+                            console.log(`[DEBUG-FIX] Added empty t.a array to layer ${idx}`);
+                        }
+                        
+                        console.log(`[DEBUG-FIX] Fixed text layer ${idx}, new t keys:`, Object.keys(layer.t));
+                    }
+                });
             }
             // #endregion
+            
+            // Re-enable keyframe structure fixes
+            fixKeyframeStructures(animationDataCopy);
             
             // #region agent log
             const textLayersAfter = (animationDataCopy.layers||[]).filter(l=>l.ty===5).map(l=>({nm:l.nm,hasT:!!l.t,hasTD:!!l.t?.d,tdkType:l.t?.d?.k?typeof l.t.d.k:'none',tdkIsArray:Array.isArray(l.t?.d?.k),tdHasA:l.t?.d?.a!==undefined,tdA:l.t?.d?.a}));
