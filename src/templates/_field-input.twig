@@ -1,10 +1,18 @@
 {% import "_includes/forms" as forms %}
 
 <div class="lottie-field" id="{{ namespacedId }}-field">
-  {% if value is iterable and value.assetId is defined %} {% set assetId =
-  value.assetId %} {% set speed = value.speed ?? 1.0 %} {% set lottieData =
-  value.data ?? null %} {% endif %} {% set asset = assetId ?
-  craft.assets.id(assetId).one() : null %}
+  {% if value is iterable and value.assetId is defined %}
+    {% set assetId = value.assetId %}
+    {% set speed = value.speed ?? 1.0 %}
+    {% set lottieData = value.data ?? null %}
+    {% set backgroundColor = value.backgroundColor ?? null %}
+  {% else %}
+    {% set assetId = null %}
+    {% set speed = 1.0 %}
+    {% set lottieData = null %}
+    {% set backgroundColor = null %}
+  {% endif %}
+  {% set asset = assetId ? craft.assets.id(assetId).one() : null %}
 
   {{ forms.elementSelectField({
         id: namespacedId ~ '-asset',
@@ -57,6 +65,7 @@
           new LottieEditor(namespacedId, {
               assetId: {{ assetId ? assetId : 'null' }},
               existingData: {{ lottieData ? lottieData|json_encode|raw : 'null' }},
+              backgroundColor: {{ backgroundColor ? ("'" ~ backgroundColor ~ "'")|raw : 'null' }},
               enableColorEditing: {{ field.enableColorEditing ? 'true' : 'false' }},
               enableSpeedControl: {{ field.enableSpeedControl ? 'true' : 'false' }}
           });

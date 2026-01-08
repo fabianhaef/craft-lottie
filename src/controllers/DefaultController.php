@@ -12,7 +12,7 @@ use yii\web\Response;
 class DefaultController extends Controller
 {
     /**
-     * @var bool Whether to allow anonymous access
+     * @var array<int|string>|bool|int Whether to allow anonymous access
      */
     protected array|bool|int $allowAnonymous = ['get-asset-json'];
 
@@ -61,16 +61,16 @@ class DefaultController extends Controller
 
         if (!$assetId) {
             return $this->asJson([
-                'error' => 'Asset ID is required'
-            ], 400);
+                'error' => 'Asset ID is required',
+            ])->setStatusCode(400);
         }
 
         $asset = Craft::$app->getAssets()->getAssetById($assetId);
 
         if (!$asset) {
             return $this->asJson([
-                'error' => 'Asset not found'
-            ], 404);
+                'error' => 'Asset not found',
+            ])->setStatusCode(404);
         }
 
         try {
@@ -84,18 +84,28 @@ class DefaultController extends Controller
 
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return $this->asJson([
-                    'error' => 'Invalid JSON file: ' . json_last_error_msg()
-                ], 400);
+                    'error' => 'Invalid JSON file: ' . json_last_error_msg(),
+                ])->setStatusCode(400);
             }
 
-            // Return the raw JSON
-            return $this->asJson($jsonData);
+            // Get background color from metadata if exists
+            $metadata = (new \craft\db\Query())
+                ->select(['backgroundColor'])
+                ->from('{{%lottie_metadata}}')
+                ->where(['assetId' => $assetId])
+                ->one();
 
+            $response = [
+                'animation' => $jsonData,
+                'backgroundColor' => $metadata['backgroundColor'] ?? null,
+            ];
+
+            return $this->asJson($response);
         } catch (\Exception $e) {
             Craft::error('Failed to read asset: ' . $e->getMessage(), __METHOD__);
             return $this->asJson([
-                'error' => 'Failed to read asset: ' . $e->getMessage()
-            ], 500);
+                'error' => 'Failed to read asset: ' . $e->getMessage(),
+            ])->setStatusCode(500);
         }
     }
 
@@ -109,6 +119,7 @@ class DefaultController extends Controller
         $request = Craft::$app->getRequest();
         $assetId = $request->getBodyParam('assetId');
         $jsonDataString = $request->getBodyParam('jsonData');
+        $backgroundColor = $request->getBodyParam('backgroundColor');
 
         // Parse the JSON string back to array
         $jsonData = $jsonDataString ? json_decode($jsonDataString, true) : null;
@@ -116,7 +127,7 @@ class DefaultController extends Controller
         if (!$assetId || !$jsonData) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Asset ID and JSON data are required'
+                'error' => 'Asset ID and JSON data are required',
             ]);
         }
 
@@ -125,7 +136,7 @@ class DefaultController extends Controller
         if (!$asset) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Asset not found'
+                'error' => 'Asset not found',
             ]);
         }
 
@@ -136,7 +147,7 @@ class DefaultController extends Controller
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return $this->asJson([
                     'success' => false,
-                    'error' => 'Invalid JSON data: ' . json_last_error_msg()
+                    'error' => 'Invalid JSON data: ' . json_last_error_msg(),
                 ]);
             }
 
@@ -154,23 +165,36 @@ class DefaultController extends Controller
                 @unlink($tempPath);
                 return $this->asJson([
                     'success' => false,
-                    'error' => 'Failed to save asset: ' . implode(', ', $asset->getErrorSummary(true))
+                    'error' => 'Failed to save asset: ' . implode(', ', $asset->getErrorSummary(true)),
                 ]);
             }
 
             // Clean up temp file
             @unlink($tempPath);
 
+            // Save background color as metadata in a separate table
+            if ($backgroundColor !== null) {
+                Craft::$app->getDb()->createCommand()
+                    ->upsert('{{%lottie_metadata}}', [
+                        'assetId' => $assetId,
+                        'backgroundColor' => $backgroundColor,
+                        'dateUpdated' => date('Y-m-d H:i:s'),
+                    ], [
+                        'backgroundColor' => $backgroundColor,
+                        'dateUpdated' => date('Y-m-d H:i:s'),
+                    ])
+                    ->execute();
+            }
+
             return $this->asJson([
                 'success' => true,
-                'message' => 'Asset saved successfully'
+                'message' => 'Asset saved successfully',
             ]);
-
         } catch (\Exception $e) {
             Craft::error('Failed to save asset: ' . $e->getMessage(), __METHOD__);
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to save asset: ' . $e->getMessage()
+                'error' => 'Failed to save asset: ' . $e->getMessage(),
             ]);
         }
     }

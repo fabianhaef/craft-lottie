@@ -2,7 +2,6 @@
 
 namespace vu\craftlottie\services;
 
-use Craft;
 use craft\base\Component;
 use craft\elements\Asset;
 use craft\helpers\Json;
@@ -47,7 +46,7 @@ class LottieService extends Component
             'width' => '100%',
             'height' => 'auto',
             'id' => 'lottie-' . uniqid(),
-            'class' => 'lottie-animation'
+            'class' => 'lottie-animation',
         ];
         
         $options = array_merge($defaultOptions, $options);
@@ -56,7 +55,7 @@ class LottieService extends Component
         $containerAttributes = [
             'id' => $options['id'],
             'class' => $options['class'],
-            'style' => "width: {$options['width']}; height: {$options['height']};"
+            'style' => "width: {$options['width']}; height: {$options['height']};",
         ];
         
         $attributeString = '';

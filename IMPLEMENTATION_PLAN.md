@@ -1,0 +1,456 @@
+# Craft Lottie Plugin - Implementation Plan
+
+## Executive Summary
+
+This document provides a comprehensive implementation plan for the Craft Lottie plugin, based on the existing codebase and the vision outlined in `DEV_PLAN.md`. The plugin aims to provide in-CMS editing capabilities for Lottie animations, allowing content authors to modify colors, text, and other properties without requiring motion designer intervention.
+
+## Current State Assessment
+
+### ✅ What's Already Implemented
+
+1. **Core Plugin Structure**
+   - Plugin registration and initialization (`src/Plugin.php`)
+   - Custom field type (`src/fields/LottieAnimatorField.php`)
+   - Service layer for rendering (`src/services/LottieService.php`)
+   - Twig variable for frontend access (`src/variables/LottieVariable.php`)
+   - CP section with navigation
+
+2. **Field Functionality**
+   - Asset selection using Craft's native element selector
+   - Field settings (upload location, enable/disable features)
+   - Data storage in JSON format
+   - Value normalization and serialization
+
+3. **Editor Features (Partially Complete)**
+   - Live preview of Lottie animations
+   - Color extraction and editing
+   - Speed control slider
+   - Background color support
+   - Real-time preview updates
+
+4. **Frontend Rendering**
+   - Twig function `craft.lottie.render()`
+   - Support for modified JSON data
+   - Configurable playback options (loop, autoplay, speed)
+   - Fallback to asset fetching if no modified data
+
+5. **Control Panel Features**
+   - CP section for managing Lottie files
+   - Separate edit page with full editor
+   - Asset JSON fetching endpoint
+   - Save functionality for edited animations
+
+6. **Infrastructure**
+   - Database migration for metadata table
+   - Asset bundle registration
+   - JavaScript editor class (`LottieEditor`)
+   - CSS styling
+
+### ⚠️ What Needs Work
+
+1. **Field Editor Integration**
+   - Color picker UI not fully integrated in field input template
+   - Speed control UI missing from field input
+   - Editor initialization issues may exist
+   - Missing UI for color editing controls in field
+
+2. **Data Flow**
+   - Field value structure needs validation
+   - Background color not properly saved in field value
+   - Speed value not properly persisted
+
+3. **Missing Phase 1 Features**
+   - Complete UI for all editing controls in field context
+   - Proper error handling and validation
+   - Better user feedback
+
+4. **Phase 2 Features (Not Started)**
+   - Dynamic text editing
+   - Layer management (show/hide layers)
+   - .lottie compressed format support
+
+5. **Phase 3 Features (Not Started)**
+   - Brand palette (global plugin settings)
+   - Advanced interactivity (URLs, scroll triggers)
+   - Save as new asset functionality
+
+## Implementation Roadmap
+
+### Phase 1: Complete MVP (Priority: HIGH)
+
+**Goal**: Make the basic field editor fully functional with all MVP features working seamlessly.
+
+#### 1.1 Fix Field Input UI (Estimated: 4-6 hours)
+
+**Tasks:**
+- [ ] Add speed control slider to `_field-input.twig`
+- [ ] Add color picker container to `_field-input.twig`
+- [ ] Ensure `LottieEditor` class properly initializes all controls
+- [ ] Fix any JavaScript errors preventing editor from working
+- [ ] Test asset selection and loading flow
+
+**Files to Modify:**
+- `src/templates/_field-input.twig`
+- `src/assets/js/lottie-editor.js`
+- `src/assets/css/lottie-field.css`
+
+**Technical Notes:**
+- The `LottieEditor` class expects a `colorsContainer` element but it's not in the template
+- Speed input needs to be added to the template
+- Need to ensure proper event binding and data persistence
+
+#### 1.2 Fix Data Persistence (Estimated: 2-3 hours)
+
+**Tasks:**
+- [ ] Ensure speed value is properly saved in field value
+- [ ] Ensure background color is properly saved in field value
+- [ ] Fix `normalizeValue()` to handle all data structure cases
+- [ ] Add validation for Lottie JSON structure
+- [ ] Test save/load cycle with modified data
+
+**Files to Modify:**
+- `src/fields/LottieAnimatorField.php`
+- `src/assets/js/lottie-editor.js`
+
+**Technical Notes:**
+- Current `saveData()` method creates object with `assetId`, `data`, `speed`, `backgroundColor`
+- Need to ensure this structure is properly handled in `normalizeValue()`
+- Background color should be stored in field value, not just metadata table
+
+#### 1.3 Improve Error Handling (Estimated: 2-3 hours)
+
+**Tasks:**
+- [ ] Add validation for uploaded files (must be valid Lottie JSON)
+- [ ] Show user-friendly error messages
+- [ ] Handle edge cases (empty files, corrupted JSON, etc.)
+- [ ] Add loading states and feedback
+
+**Files to Modify:**
+- `src/assets/js/lottie-editor.js`
+- `src/controllers/DefaultController.php`
+- `src/fields/LottieAnimatorField.php`
+
+#### 1.4 Testing & Refinement (Estimated: 3-4 hours)
+
+**Tasks:**
+- [ ] Test complete workflow: upload → edit → save → render
+- [ ] Test with various Lottie file structures
+- [ ] Test color editing with different color formats
+- [ ] Test speed control with various values
+- [ ] Fix any UI/UX issues
+- [ ] Ensure frontend rendering works correctly
+
+**Deliverables:**
+- Fully functional MVP
+- Working field editor with all controls
+- Proper data persistence
+- Frontend rendering working
+
+### Phase 2: Enhanced Editor & Workflow (Priority: MEDIUM)
+
+**Goal**: Add advanced editing features and improve the authoring experience.
+
+#### 2.1 Dynamic Text Editing (Estimated: 8-10 hours)
+
+**Tasks:**
+- [ ] Identify text layers in Lottie JSON structure
+- [ ] Create UI for editing text content
+- [ ] Implement text replacement logic
+- [ ] Handle keyframed text animations
+- [ ] Add preview of text changes
+
+**Technical Approach:**
+- Lottie text layers have structure: `layers[].t.d.k[].s.t` (text content)
+- Need to traverse layers, find text layers, extract text
+- Provide input fields for each text layer
+- Update JSON structure when text changes
+- Re-render preview
+
+**Files to Create/Modify:**
+- `src/assets/js/lottie-editor.js` (add text editing methods)
+- `src/templates/_field-input.twig` (add text editing UI)
+- `src/assets/css/lottie-field.css` (style text editor)
+
+#### 2.2 Layer Management (Estimated: 6-8 hours)
+
+**Tasks:**
+- [ ] Extract layer information from Lottie JSON
+- [ ] Create UI to list all layers
+- [ ] Add toggle controls to show/hide layers
+- [ ] Implement layer visibility logic
+- [ ] Update preview when layers are toggled
+
+**Technical Approach:**
+- Lottie layers are in `layers[]` array
+- Each layer has `ip` (in point), `op` (out point), `st` (start time)
+- To hide a layer, set `op` to 0 or remove from array (better: set `op` to 0)
+- Need to preserve layer structure for re-enabling
+
+**Files to Create/Modify:**
+- `src/assets/js/lottie-editor.js` (add layer management)
+- `src/templates/_field-input.twig` (add layer list UI)
+- `src/assets/css/lottie-field.css` (style layer controls)
+
+#### 2.3 Asset Volume Integration (Estimated: 2-3 hours)
+
+**Tasks:**
+- [ ] Verify asset selector is working correctly
+- [ ] Ensure proper filtering for JSON files only
+- [ ] Add validation that selected asset is valid Lottie file
+- [ ] Improve asset selection UX
+
+**Status**: Mostly complete, may need refinement
+
+#### 2.4 .lottie Format Support (Estimated: 10-12 hours)
+
+**Tasks:**
+- [ ] Research .lottie format specification
+- [ ] Add library for .lottie decompression (if needed)
+- [ ] Implement .lottie file detection
+- [ ] Add decompression logic
+- [ ] Handle both .json and .lottie formats
+- [ ] Consider compression on save (optional)
+
+**Technical Notes:**
+- .lottie is a compressed binary format
+- May need additional library: `@lottiefiles/lottie-js` might support it
+- Check if `lottie-web` can handle .lottie files directly
+- If not, need decompression library
+
+**Files to Create/Modify:**
+- `src/services/LottieService.php` (add format detection)
+- `src/controllers/DefaultController.php` (handle .lottie files)
+- `src/assets/js/lottie-editor.js` (handle .lottie loading)
+- `package.json` (add .lottie library if needed)
+
+### Phase 3: Power User & Brand Governance (Priority: LOW)
+
+**Goal**: Add enterprise features for brand consistency and advanced workflows.
+
+#### 3.1 Brand Palette (Estimated: 6-8 hours)
+
+**Tasks:**
+- [ ] Create plugin settings page
+- [ ] Add brand color palette configuration
+- [ ] Store palette in plugin settings
+- [ ] Integrate palette into field color picker
+- [ ] Show palette colors alongside custom colors
+- [ ] Add validation to restrict to palette (optional)
+
+**Technical Approach:**
+- Use Craft's plugin settings system
+- Store colors as array in settings
+- Pass palette to field editor via options
+- Display palette as swatches in color picker UI
+- Allow selection from palette or custom color
+
+**Files to Create/Modify:**
+- `src/Plugin.php` (add settings)
+- `src/templates/settings.twig` (settings page)
+- `src/assets/js/lottie-editor.js` (use palette)
+- `src/templates/_field-input.twig` (show palette)
+
+#### 3.2 Advanced Interactivity (Estimated: 10-12 hours)
+
+**Tasks:**
+- [ ] Add URL linking to animation elements
+- [ ] Implement scroll-based playback triggers
+- [ ] Add click/hover interaction options
+- [ ] Create UI for configuring interactions
+- [ ] Generate interaction code for frontend
+
+**Technical Approach:**
+- Store interaction metadata in field value
+- Use lottie-web's event system
+- Add JavaScript for scroll detection
+- Generate frontend code in `LottieService::render()`
+
+**Files to Create/Modify:**
+- `src/assets/js/lottie-editor.js` (interaction UI)
+- `src/services/LottieService.php` (render interactions)
+- `src/templates/_field-input.twig` (interaction controls)
+
+#### 3.3 Save as New Asset (Estimated: 6-8 hours)
+
+**Tasks:**
+- [ ] Add "Save as Copy" button to editor
+- [ ] Create new asset from modified JSON
+- [ ] Generate unique filename
+- [ ] Update field to reference new asset
+- [ ] Handle asset permissions
+
+**Technical Approach:**
+- Use Craft's asset creation API
+- Create new asset in same volume or specified location
+- Generate filename: `original-name-edited-{timestamp}.json`
+- Update field value to new asset ID
+- Preserve all modifications
+
+**Files to Create/Modify:**
+- `src/controllers/DefaultController.php` (save-as action)
+- `src/assets/js/lottie-editor.js` (save-as UI)
+- `src/templates/_field-input.twig` (save-as button)
+
+## Technical Debt & Improvements
+
+### Code Quality
+- [ ] Add PHPStan level 8 compliance
+- [ ] Add comprehensive PHPDoc comments
+- [ ] Refactor JavaScript for better maintainability
+- [ ] Add unit tests for critical functions
+- [ ] Add integration tests for field workflow
+
+### Performance
+- [ ] Optimize color extraction algorithm
+- [ ] Cache parsed Lottie JSON structure
+- [ ] Lazy load lottie-web library
+- [ ] Optimize preview rendering
+
+### User Experience
+- [ ] Add keyboard shortcuts
+- [ ] Improve loading states
+- [ ] Add undo/redo functionality
+- [ ] Better error messages
+- [ ] Add help text and tooltips
+- [ ] Responsive design improvements
+
+### Documentation
+- [ ] Complete README with examples
+- [ ] Add inline code documentation
+- [ ] Create user guide
+- [ ] Add developer documentation
+
+## Recommended Implementation Order
+
+### Immediate (Week 1-2)
+1. **Phase 1.1**: Fix Field Input UI
+2. **Phase 1.2**: Fix Data Persistence
+3. **Phase 1.3**: Improve Error Handling
+4. **Phase 1.4**: Testing & Refinement
+
+### Short-term (Week 3-6)
+5. **Phase 2.1**: Dynamic Text Editing
+6. **Phase 2.2**: Layer Management
+7. **Phase 2.3**: Asset Volume Integration (refinement)
+
+### Medium-term (Week 7-10)
+8. **Phase 2.4**: .lottie Format Support
+9. **Phase 3.1**: Brand Palette
+
+### Long-term (Week 11+)
+10. **Phase 3.2**: Advanced Interactivity
+11. **Phase 3.3**: Save as New Asset
+12. Technical debt and improvements
+
+## Key Technical Decisions Needed
+
+1. **Color Editing Strategy**
+   - Current: Replace all instances of a color
+   - Alternative: Edit specific layer colors individually
+   - **Recommendation**: Keep current approach for MVP, add layer-specific editing in Phase 2
+
+2. **Data Storage Strategy**
+   - Current: Store modified JSON in field value
+   - Alternative: Store only modifications, merge on render
+   - **Recommendation**: Current approach is simpler and works well
+
+3. **Preview Rendering**
+   - Current: Use lottie-web in CP
+   - Alternative: Use @lottiefiles/lottie-js for manipulation, lottie-web for preview
+   - **Recommendation**: Current approach works, but consider using lottie-js for better manipulation
+
+4. **.lottie Format**
+   - Need to research: Can lottie-web handle .lottie directly?
+   - If not, which library to use for decompression?
+   - **Action**: Research before implementing
+
+## Dependencies Review
+
+### Current Dependencies
+- `@lottiefiles/lottie-js`: ^0.4.2 (installed but may not be used)
+- `lottie-web`: ^5.13.0 (used for rendering)
+
+### Potential Additional Dependencies
+- Library for .lottie format (TBD)
+- Color manipulation library (if needed)
+- Text extraction/editing utilities (if needed)
+
+## Testing Strategy
+
+### Manual Testing Checklist
+- [ ] Upload valid Lottie JSON file
+- [ ] Select existing asset
+- [ ] Edit colors and see preview update
+- [ ] Change speed and see preview update
+- [ ] Save entry and verify data persists
+- [ ] Load entry and verify data loads correctly
+- [ ] Render on frontend with Twig function
+- [ ] Test with various Lottie file structures
+- [ ] Test error cases (invalid JSON, missing file, etc.)
+
+### Automated Testing (Future)
+- Unit tests for field value normalization
+- Unit tests for color extraction
+- Integration tests for save/load cycle
+- Frontend rendering tests
+
+## Success Criteria
+
+### Phase 1 MVP Complete When:
+- ✅ Users can select/upload Lottie files in field
+- ✅ Live preview works in field editor
+- ✅ Color editing works and persists
+- ✅ Speed control works and persists
+- ✅ Frontend rendering works correctly
+- ✅ No critical bugs or errors
+
+### Phase 2 Complete When:
+- ✅ Text editing works
+- ✅ Layer management works
+- ✅ .lottie format supported (if feasible)
+
+### Phase 3 Complete When:
+- ✅ Brand palette implemented
+- ✅ Advanced interactivity works
+- ✅ Save as new asset works
+
+## Notes & Considerations
+
+1. **Lottie JSON Structure**: Lottie files have complex nested structures. Color/text extraction needs to handle various formats and edge cases.
+
+2. **Performance**: Large Lottie files may cause performance issues. Consider:
+   - Limiting preview size
+   - Debouncing preview updates
+   - Optimizing color extraction
+
+3. **Browser Compatibility**: Ensure lottie-web works in all target browsers. Consider polyfills if needed.
+
+4. **Security**: Validate all user input, especially JSON data. Ensure no XSS vulnerabilities in rendered output.
+
+5. **Backward Compatibility**: Consider how to handle existing field values if data structure changes.
+
+6. **Asset Permissions**: Ensure users have proper permissions to access and modify assets.
+
+## Getting Started
+
+To begin implementation:
+
+1. **Review Current Code**: Understand the existing implementation
+2. **Set Up Development Environment**: Ensure plugin is linked to Craft project
+3. **Start with Phase 1.1**: Fix the field input UI
+4. **Test Incrementally**: Test each feature as you implement it
+5. **Document Changes**: Update this plan as you progress
+
+## Questions to Resolve
+
+1. Should color editing replace ALL instances of a color, or allow selective replacement?
+2. How should we handle Lottie files with embedded images/assets?
+3. Should we support Lottie files with expressions?
+4. What's the maximum file size we should support?
+5. Should edited animations be saved back to the original asset or always stored separately?
+
+---
+
+**Last Updated**: 2026-01-08
+**Status**: Ready for Implementation
+**Next Steps**: Begin Phase 1.1 - Fix Field Input UI

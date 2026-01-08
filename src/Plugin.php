@@ -5,13 +5,13 @@ namespace vu\craftlottie;
 use Craft;
 use craft\base\Plugin as BasePlugin;
 use craft\events\RegisterComponentTypesEvent;
+use craft\events\RegisterUrlRulesEvent;
 use craft\services\Fields;
+use craft\web\twig\variables\CraftVariable;
+use craft\web\UrlManager;
 use vu\craftlottie\fields\LottieAnimatorField;
 use vu\craftlottie\services\LottieService;
 use vu\craftlottie\variables\LottieVariable;
-use craft\web\twig\variables\CraftVariable;
-use craft\web\UrlManager;
-use craft\events\RegisterUrlRulesEvent;
 use yii\base\Event;
 
 /**
@@ -47,12 +47,12 @@ class Plugin extends BasePlugin
 
         // Any code that creates an element query or loads Twig should be deferred until
         // after Craft is fully initialized, to avoid conflicts with other plugins/modules
-        Craft::$app->onInit(function () {
+        Craft::$app->onInit(function() {
             // Register Twig variable
             Event::on(
                 CraftVariable::class,
                 CraftVariable::EVENT_INIT,
-                function (Event $event) {
+                function(Event $event) {
                     /** @var CraftVariable $variable */
                     $variable = $event->sender;
                     $variable->set('lottie', LottieVariable::class);
@@ -67,7 +67,7 @@ class Plugin extends BasePlugin
         Event::on(
             Fields::class,
             Fields::EVENT_REGISTER_FIELD_TYPES,
-            function (RegisterComponentTypesEvent $event) {
+            function(RegisterComponentTypesEvent $event) {
                 $event->types[] = LottieAnimatorField::class;
             }
         );
@@ -78,7 +78,7 @@ class Plugin extends BasePlugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
+            function(RegisterUrlRulesEvent $event) {
                 $event->rules['craft-lottie'] = 'craft-lottie/default/index';
                 $event->rules['craft-lottie/edit/<assetId:\d+>'] = 'craft-lottie/default/edit';
             }

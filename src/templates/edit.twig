@@ -26,7 +26,11 @@
                 </div>
 
                 <div class="lottie-controls-section">
-                    <h3>{{ "Speed"|t('craft-lottie') }}</h3>
+                    <h3>{{ "Background Color"|t('craft-lottie') }}</h3>
+                    <input type="color" id="background-color" value="#ffffff">
+                    <button type="button" id="clear-background" class="btn small">{{ "Clear"|t('craft-lottie') }}</button>
+
+                    <h3 style="margin-top: 20px;">{{ "Speed"|t('craft-lottie') }}</h3>
                     <input type="number" id="speed-control" min="0.1" max="5" step="0.1" value="1.0" style="width: 100px;">
 
                     <h3 style="margin-top: 20px;">{{ "Colors"|t('craft-lottie') }}</h3>
@@ -125,6 +129,8 @@ function initLottieEditor() {
     const previewContainer = document.getElementById('lottie-preview');
     const speedControl = document.getElementById('speed-control');
     const colorContainer = document.getElementById('color-picker-container');
+    const backgroundColorInput = document.getElementById('background-color');
+    const clearBackgroundBtn = document.getElementById('clear-background');
 
     // Get asset ID from data attribute
     const assetId = previewContainer.getAttribute('data-asset-id');
@@ -132,6 +138,7 @@ function initLottieEditor() {
     let lottieAnimation = null;
     let lottieData = null;
     let hasChanges = false;
+    let backgroundColor = null;
 
     const saveBtn = document.getElementById('save-btn');
 
@@ -149,7 +156,13 @@ function initLottieEditor() {
             if (data.error) {
                 throw new Error(data.error);
             }
-            lottieData = data;
+            lottieData = data.animation || data;
+            backgroundColor = data.backgroundColor || null;
+
+            if (backgroundColor) {
+                backgroundColorInput.value = backgroundColor;
+            }
+
             renderAnimation();
             extractColors();
         })
@@ -165,6 +178,13 @@ function initLottieEditor() {
 
         // Clear spinner
         previewContainer.innerHTML = '';
+
+        // Apply background color
+        if (backgroundColor) {
+            previewContainer.style.backgroundColor = backgroundColor;
+        } else {
+            previewContainer.style.backgroundColor = '';
+        }
 
         lottieAnimation = lottie.loadAnimation({
             container: previewContainer,
@@ -182,6 +202,24 @@ function initLottieEditor() {
             lottieAnimation.setSpeed(1.0);
         }
     }
+
+    // Background color control
+    backgroundColorInput.addEventListener('input', function(e) {
+        backgroundColor = e.target.value;
+        if (previewContainer) {
+            previewContainer.style.backgroundColor = backgroundColor;
+        }
+        markAsChanged();
+    });
+
+    clearBackgroundBtn.addEventListener('click', function() {
+        backgroundColor = null;
+        backgroundColorInput.value = '#ffffff';
+        if (previewContainer) {
+            previewContainer.style.backgroundColor = '';
+        }
+        markAsChanged();
+    });
 
     // Speed control
     speedControl.addEventListener('input', function() {
@@ -354,6 +392,7 @@ function initLottieEditor() {
         const formData = new FormData();
         formData.append('assetId', assetId);
         formData.append('jsonData', JSON.stringify(lottieData));
+        formData.append('backgroundColor', backgroundColor || '');
         formData.append(Craft.csrfTokenName, Craft.csrfTokenValue);
 
         fetch('/actions/craft-lottie/default/save-asset-json', {

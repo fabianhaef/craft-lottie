@@ -6,8 +6,6 @@ use Craft;
 use craft\base\ElementInterface;
 use craft\base\Field;
 use craft\helpers\Json;
-use craft\helpers\Assets as AssetsHelper;
-use craft\models\Volume;
 use yii\db\Schema;
 
 class LottieAnimatorField extends Field

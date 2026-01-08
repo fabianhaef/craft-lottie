@@ -1,7 +1,26 @@
-includes:
-    - vendor/craftcms/phpstan/phpstan.neon
-
 parameters:
-    level: 4
+    level: 5
     paths:
         - src
+    excludePaths:
+        - src/templates/*
+        - src/migrations/*
+        - src/web/*
+        - src/translations/*
+    tmpDir: .phpstan
+    treatPhpDocTypesAsCertain: false
+    bootstrapFiles:
+        - vendor/autoload.php
+        - vendor/craftcms/cms/bootstrap/console.php
+    ignoreErrors:
+        # Common patterns for Craft CMS plugins
+        - '#Cannot access offset .+ on mixed#'
+
+    # Rules for stricter code
+    checkFunctionNameCase: true
+    reportMagicMethods: true
+    reportMagicProperties: true
+    checkExplicitMixed: true
+    
+includes:
+    - vendor/craftcms/phpstan/phpstan.neon

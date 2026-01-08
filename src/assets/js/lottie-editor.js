@@ -10,6 +10,7 @@ class LottieEditor {
         this.lottieData = null;
         this.previewInstance = null;
         this.currentAssetId = options.assetId || null;
+        this.backgroundColor = options.backgroundColor || null;
         this.enableColorEditing = options.enableColorEditing || false;
 
         this.init();
@@ -234,6 +235,13 @@ class LottieEditor {
             return;
         }
 
+        // Apply background color
+        if (this.backgroundColor) {
+            this.previewElement.style.backgroundColor = this.backgroundColor;
+        } else {
+            this.previewElement.style.backgroundColor = '';
+        }
+
         try {
             this.previewInstance = lottie.loadAnimation({
                 container: this.previewElement,
@@ -371,7 +379,8 @@ class LottieEditor {
         const value = {
             assetId: this.currentAssetId || null,
             data: this.lottieData || null,
-            speed: this.speedInput ? parseFloat(this.speedInput.value) : 1.0
+            speed: this.speedInput ? parseFloat(this.speedInput.value) : 1.0,
+            backgroundColor: this.backgroundColor || null
         };
 
         this.valueInput.value = JSON.stringify(value);
