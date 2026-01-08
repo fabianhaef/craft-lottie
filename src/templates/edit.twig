@@ -11,30 +11,70 @@
                     <h1>{{ asset.filename }}</h1>
                     <p class="light">{{ asset.volume.name }} • {{ asset.size|filesize }}</p>
                 </div>
-                <div>
-                    <button id="save-btn" class="btn submit" disabled>{{ "Save Changes"|t('craft-lottie') }}</button>
+                <div class="flex gap">
                     <a href="{{ url('craft-lottie') }}" class="btn">{{ "← Back to Library"|t('craft-lottie') }}</a>
+                    <button id="save-btn" class="btn submit" disabled>{{ "Save Changes"|t('craft-lottie') }}</button>
                 </div>
             </div>
         </div>
 
         <div class="lottie-editor-content">
-            <div class="lottie-preview-section">
-                <h2>{{ "Preview"|t('craft-lottie') }}</h2>
-                <div id="lottie-preview" class="lottie-preview-container" data-asset-id="{{ asset.id }}">
-                    <div class="spinner"></div>
+            <div class="lottie-editor-grid">
+                <!-- Preview Section -->
+                <div class="lottie-preview-pane">
+                    <div class="pane">
+                        <h2>{{ "Preview"|t('craft-lottie') }}</h2>
+                        <div id="lottie-preview" class="lottie-preview-container" data-asset-id="{{ asset.id }}">
+                            <div class="lottie-loading">
+                                <div class="spinner"></div>
+                                <p>{{ "Loading animation..."|t('craft-lottie') }}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="lottie-controls-section">
-                    <h3>{{ "Background Color"|t('craft-lottie') }}</h3>
-                    <input type="color" id="background-color" value="#ffffff">
-                    <button type="button" id="clear-background" class="btn small">{{ "Clear"|t('craft-lottie') }}</button>
+                <!-- Controls Section -->
+                <div class="lottie-controls-pane">
+                    <div class="pane">
+                        <h2>{{ "Animation Settings"|t('craft-lottie') }}</h2>
+                        
+                        {% set speedLabel = "Playback Speed"|t('craft-lottie') %}
+                        {% set speedInstructions = "Adjust the animation playback speed (0.1x to 5.0x)"|t('craft-lottie') %}
+                        {{ forms.field({
+                            label: speedLabel,
+                            instructions: speedInstructions,
+                            id: 'speed-field'
+                        }, '<div class="lottie-speed-control-wrapper">
+                            <input type="range" id="speed-control" min="0.1" max="5" step="0.1" value="1.0" class="lottie-speed-slider">
+                            <div class="lottie-speed-display">
+                                <input type="number" id="speed-input" min="0.1" max="5" step="0.1" value="1.0" class="lottie-speed-input">
+                                <span class="lottie-speed-unit">x</span>
+                            </div>
+                        </div>') }}
 
-                    <h3 style="margin-top: 20px;">{{ "Speed"|t('craft-lottie') }}</h3>
-                    <input type="number" id="speed-control" min="0.1" max="5" step="0.1" value="1.0" style="width: 100px;">
+                        {% set bgColorLabel = "Background Color"|t('craft-lottie') %}
+                        {% set bgColorInstructions = "Set a background color for the animation preview"|t('craft-lottie') %}
+                        {% set clearLabel = "Clear"|t('craft-lottie') %}
+                        {{ forms.field({
+                            label: bgColorLabel,
+                            instructions: bgColorInstructions,
+                            id: 'background-color-field'
+                        }, '<div class="lottie-background-control-wrapper">
+                            <input type="color" id="background-color" value="#ffffff" class="lottie-color-input">
+                            <button type="button" id="clear-background" class="btn small">' ~ clearLabel ~ '</button>
+                        </div>') }}
 
-                    <h3 style="margin-top: 20px;">{{ "Colors"|t('craft-lottie') }}</h3>
-                    <div id="color-picker-container" class="lottie-color-picker-container"></div>
+                        {% set colorsLabel = "Edit Colors"|t('craft-lottie') %}
+                        {% set colorsInstructions = "Modify colors in the animation. Changes are applied in real-time."|t('craft-lottie') %}
+                        {% set extractingColors = "Extracting colors..."|t('craft-lottie') %}
+                        {{ forms.field({
+                            label: colorsLabel,
+                            instructions: colorsInstructions,
+                            id: 'colors-field'
+                        }, '<div id="color-picker-container" class="lottie-color-picker-container">
+                            <div class="lottie-colors-loading">' ~ extractingColors ~ '</div>
+                        </div>') }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -43,75 +83,262 @@
 
 {% css %}
 .lottie-editor-header {
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #e3e5e8;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--hairline-color);
 }
 
 .lottie-editor-header h1 {
     margin-bottom: 4px;
+    font-size: 24px;
+}
+
+.lottie-editor-header .flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lottie-editor-header .flex.gap {
+    gap: 12px;
 }
 
 .lottie-editor-content {
-    max-width: 1200px;
+    max-width: 1400px;
 }
 
-.lottie-preview-section h2 {
-    font-size: 16px;
+.lottie-editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+}
+
+.lottie-preview-pane .pane,
+.lottie-controls-pane .pane {
+    padding: 24px;
+    background: var(--pane-bg);
+    border-radius: var(--pane-border-radius);
+    box-shadow: var(--pane-shadow);
+}
+
+.lottie-preview-pane h2,
+.lottie-controls-pane h2 {
+    font-size: 18px;
     font-weight: 600;
     margin-bottom: 16px;
-}
-
-.lottie-preview-section h3 {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    margin-top: 20px;
+    color: var(--text-color);
 }
 
 .lottie-preview-container {
     width: 100%;
-    height: 500px;
-    background: #f9fafb;
-    border: 1px solid #e3e5e8;
-    border-radius: 8px;
+    min-height: 400px;
+    max-height: 600px;
+    background: var(--gray-050);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--small-border-radius);
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    overflow: hidden;
 }
 
-.lottie-controls-section {
-    margin-top: 30px;
+.lottie-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--light-text-color);
+}
+
+.lottie-loading .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--link-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.lottie-speed-control-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.lottie-speed-slider {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--gray-200);
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.lottie-speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--link-color);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s;
+}
+
+.lottie-speed-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.lottie-speed-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--link-color);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s;
+}
+
+.lottie-speed-slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+}
+
+.lottie-speed-display {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 80px;
+}
+
+.lottie-speed-input {
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--small-border-radius);
+    background: var(--input-bg);
+    font-size: 14px;
+    text-align: center;
+}
+
+.lottie-speed-unit {
+    font-size: 14px;
+    color: var(--light-text-color);
+    font-weight: 500;
+}
+
+.lottie-background-control-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lottie-color-input {
+    width: 60px;
+    height: 40px;
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--small-border-radius);
+    cursor: pointer;
+    padding: 2px;
+    background: var(--input-bg);
 }
 
 .lottie-color-picker-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
 }
 
 .lottie-color-item {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
-    padding: 8px 12px;
-    background: white;
-    border: 1px solid #e3e5e8;
-    border-radius: 6px;
-    font-size: 12px;
+    padding: 12px;
+    background: var(--gray-050);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--small-border-radius);
+    transition: all 0.2s;
+}
+
+.lottie-color-item:hover {
+    border-color: var(--link-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .lottie-color-swatch {
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    width: 100%;
+    height: 40px;
+    border-radius: var(--small-border-radius);
+    border: 1px solid var(--hairline-color);
     cursor: pointer;
+    padding: 2px;
+    background: white;
 }
 
-@media (max-width: 1024px) {
-    .lottie-editor-content {
+.lottie-color-label {
+    font-size: 12px;
+    color: var(--light-text-color);
+    text-align: center;
+    word-break: break-all;
+}
+
+.lottie-colors-loading {
+    padding: 20px;
+    text-align: center;
+    color: var(--light-text-color);
+    font-size: 14px;
+}
+
+.lottie-colors-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--light-text-color);
+    font-size: 14px;
+    font-style: italic;
+}
+
+.lottie-error {
+    padding: 24px;
+    text-align: center;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--small-border-radius);
+}
+
+.lottie-error > div:first-child {
+    color: #cf1124;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.lottie-error > div:nth-child(2) {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.lottie-error > div:last-child {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+@media (max-width: 1200px) {
+    .lottie-editor-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .lottie-controls-pane {
+        order: -1;
     }
 }
 {% endcss %}
@@ -123,17 +350,29 @@ lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lot
 lottieScript.onload = function() {
     initLottieEditor();
 };
+lottieScript.onerror = function() {
+    const previewContainer = document.getElementById('lottie-preview');
+    if (previewContainer) {
+        previewContainer.innerHTML = '<div class="lottie-loading"><p style="color: #cf1124;">Failed to load Lottie library. Please refresh the page.</p></div>';
+    }
+};
 document.head.appendChild(lottieScript);
 
 function initLottieEditor() {
     const previewContainer = document.getElementById('lottie-preview');
     const speedControl = document.getElementById('speed-control');
+    const speedInput = document.getElementById('speed-input');
     const colorContainer = document.getElementById('color-picker-container');
     const backgroundColorInput = document.getElementById('background-color');
     const clearBackgroundBtn = document.getElementById('clear-background');
 
     // Get asset ID from data attribute
     const assetId = previewContainer.getAttribute('data-asset-id');
+
+    if (!assetId) {
+        previewContainer.innerHTML = '<div class="lottie-loading"><p style="color: #cf1124;">Invalid asset ID</p></div>';
+        return;
+    }
 
     let lottieAnimation = null;
     let lottieData = null;
@@ -148,19 +387,35 @@ function initLottieEditor() {
     fetch(fetchUrl)
         .then(response => {
             if (!response.ok) {
-                throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+                // Try to get error details from response
+                return response.json().then(data => {
+                    throw new Error(data.error || 'HTTP ' + response.status + ': ' + response.statusText);
+                }).catch(() => {
+                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+                });
             }
             return response.json();
         })
         .then(data => {
             if (data.error) {
-                throw new Error(data.error);
+                const errorCode = data.errorCode || 'UNKNOWN_ERROR';
+                const errorMessage = data.error || 'An unknown error occurred';
+                console.error('Lottie load error:', errorCode, errorMessage);
+                showError(errorMessage, errorCode);
+                return;
             }
+            
             lottieData = data.animation || data;
             backgroundColor = data.backgroundColor || null;
+            const savedSpeed = data.speed || 1.0;
 
             if (backgroundColor) {
                 backgroundColorInput.value = backgroundColor;
+            }
+            
+            if (speedControl && speedInput) {
+                speedControl.value = savedSpeed;
+                speedInput.value = savedSpeed;
             }
 
             renderAnimation();
@@ -168,15 +423,51 @@ function initLottieEditor() {
         })
         .catch(error => {
             console.error('Failed to load Lottie file:', error);
-            previewContainer.innerHTML = '<p style="color: #cf1124; padding: 20px;">Failed to load animation:<br>' + error.message + '</p>';
+            // Try to get error details from response if available
+            if (error.response) {
+                error.response.json().then(data => {
+                    if (data.error) {
+                        showError(data.error, data.errorCode || 'NETWORK_ERROR');
+                    } else {
+                        showError(error.message || 'An unexpected error occurred while loading the animation.', 'NETWORK_ERROR');
+                    }
+                }).catch(() => {
+                    showError(error.message || 'An unexpected error occurred while loading the animation.', 'NETWORK_ERROR');
+                });
+            } else {
+                showError(error.message || 'An unexpected error occurred while loading the animation.', 'NETWORK_ERROR');
+            }
         });
+
+    function showError(message, errorCode = 'ERROR') {
+        const errorHtml = `
+            <div class="lottie-error" style="padding: 24px; text-align: center;">
+                <div style="color: #cf1124; font-size: 18px; font-weight: 600; margin-bottom: 8px;">
+                    Unable to load animation
+                </div>
+                <div style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">
+                    ${escapeHtml(message)}
+                </div>
+                <div style="font-size: 12px; color: #9ca3af;">
+                    Error code: ${errorCode}
+                </div>
+            </div>
+        `;
+        previewContainer.innerHTML = errorHtml;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
     function renderAnimation() {
         if (lottieAnimation) {
             lottieAnimation.destroy();
         }
 
-        // Clear spinner
+        // Clear loading state
         previewContainer.innerHTML = '';
 
         // Apply background color
@@ -186,22 +477,57 @@ function initLottieEditor() {
             previewContainer.style.backgroundColor = '';
         }
 
-        lottieAnimation = lottie.loadAnimation({
-            container: previewContainer,
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            animationData: lottieData
-        });
+        try {
+            lottieAnimation = lottie.loadAnimation({
+                container: previewContainer,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                animationData: lottieData
+            });
 
-        // Apply speed
-        const speed = parseFloat(speedControl.value);
-        if (!isNaN(speed) && speed > 0) {
-            lottieAnimation.setSpeed(speed);
-        } else {
-            lottieAnimation.setSpeed(1.0);
+            // Apply speed
+            const speed = parseFloat(speedControl.value) || 1.0;
+            if (!isNaN(speed) && speed > 0) {
+                lottieAnimation.setSpeed(speed);
+            } else {
+                lottieAnimation.setSpeed(1.0);
+            }
+        } catch (error) {
+            console.error('Error rendering animation:', error);
+            previewContainer.innerHTML = '<div class="lottie-loading"><p style="color: #cf1124;">Error rendering animation: ' + error.message + '</p></div>';
         }
     }
+
+    // Speed control synchronization
+    function syncSpeed(value) {
+        if (speedControl) speedControl.value = value;
+        if (speedInput) speedInput.value = value;
+        if (lottieAnimation) {
+            const speed = parseFloat(value) || 1.0;
+            lottieAnimation.setSpeed(speed);
+        }
+        markAsChanged();
+    }
+
+    speedControl.addEventListener('input', function() {
+        syncSpeed(this.value);
+    });
+
+    speedInput.addEventListener('input', function() {
+        let value = parseFloat(this.value);
+        if (isNaN(value) || value < 0.1) value = 0.1;
+        if (value > 5.0) value = 5.0;
+        this.value = value;
+        syncSpeed(value);
+    });
+
+    speedInput.addEventListener('blur', function() {
+        if (!this.value || parseFloat(this.value) <= 0) {
+            this.value = 1.0;
+            syncSpeed(1.0);
+        }
+    });
 
     // Background color control
     backgroundColorInput.addEventListener('input', function(e) {
@@ -221,25 +547,6 @@ function initLottieEditor() {
         markAsChanged();
     });
 
-    // Speed control
-    speedControl.addEventListener('input', function() {
-        if (lottieAnimation && this.value) {
-            const speed = parseFloat(this.value);
-            if (!isNaN(speed) && speed > 0) {
-                lottieAnimation.setSpeed(speed);
-            }
-        }
-    });
-
-    speedControl.addEventListener('blur', function() {
-        if (!this.value || parseFloat(this.value) <= 0) {
-            this.value = 1.0;
-            if (lottieAnimation) {
-                lottieAnimation.setSpeed(1.0);
-            }
-        }
-    });
-
     // Extract colors from Lottie JSON
     function extractColors() {
         const colors = new Set();
@@ -248,7 +555,7 @@ function initLottieEditor() {
         colorContainer.innerHTML = '';
 
         if (colors.size === 0) {
-            colorContainer.innerHTML = '<p class="light">No editable colors found in this animation</p>';
+            colorContainer.innerHTML = '<div class="lottie-colors-empty">{{ "No editable colors found in this animation"|t('craft-lottie') }}</div>';
             return;
         }
 
@@ -309,15 +616,16 @@ function initLottieEditor() {
         colorSwatch.className = 'lottie-color-swatch';
         colorSwatch.dataset.currentColor = color;
 
-        const colorLabel = document.createElement('span');
-        colorLabel.textContent = `Color ${index + 1}: ${color}`;
+        const colorLabel = document.createElement('div');
+        colorLabel.className = 'lottie-color-label';
+        colorLabel.textContent = color.toUpperCase();
 
         colorSwatch.addEventListener('input', function(e) {
             const oldColor = colorSwatch.dataset.currentColor;
             const newColor = e.target.value;
             updateColor(oldColor, newColor);
             colorSwatch.dataset.currentColor = newColor;
-            colorLabel.textContent = `Color ${index + 1}: ${newColor}`;
+            colorLabel.textContent = newColor.toUpperCase();
         });
 
         colorItem.appendChild(colorSwatch);
@@ -387,13 +695,14 @@ function initLottieEditor() {
         if (!hasChanges) return;
 
         saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving...';
+        saveBtn.textContent = '{{ "Saving..."|t('craft-lottie') }}';
 
         const formData = new FormData();
         formData.append('assetId', assetId);
         formData.append('jsonData', JSON.stringify(lottieData));
         formData.append('backgroundColor', backgroundColor || '');
-        formData.append(Craft.csrfTokenName, Craft.csrfTokenValue);
+        formData.append('speed', speedControl.value || '1.0');
+        formData.append('{{ craft.app.request.csrfParam }}', '{{ craft.app.request.csrfToken }}');
 
         fetch('/actions/craft-lottie/default/save-asset-json', {
             method: 'POST',
@@ -413,21 +722,21 @@ function initLottieEditor() {
         .then(data => {
             if (data.success) {
                 hasChanges = false;
-                saveBtn.textContent = 'Saved!';
+                saveBtn.textContent = '{{ "Saved!"|t('craft-lottie') }}';
                 setTimeout(() => {
-                    saveBtn.textContent = 'Save Changes';
+                    saveBtn.textContent = '{{ "Save Changes"|t('craft-lottie') }}';
                     saveBtn.disabled = true;
                 }, 2000);
-                Craft.cp.displayNotice('Animation saved successfully');
+                Craft.cp.displayNotice('{{ "Animation saved successfully"|t('craft-lottie') }}');
             } else {
-                throw new Error(data.error || 'Failed to save');
+                throw new Error(data.error || '{{ "Failed to save"|t('craft-lottie') }}');
             }
         })
         .catch(error => {
             console.error('Save failed:', error);
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Save Changes';
-            Craft.cp.displayError('Failed to save animation: ' + error.message);
+            saveBtn.textContent = '{{ "Save Changes"|t('craft-lottie') }}';
+            Craft.cp.displayError('{{ "Failed to save animation:"|t('craft-lottie') }} ' + error.message);
         });
     });
 }

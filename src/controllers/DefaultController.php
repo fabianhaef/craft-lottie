@@ -79,18 +79,34 @@ class DefaultController extends Controller
             $contents = stream_get_contents($stream);
             fclose($stream);
 
-            // Parse to validate it's valid JSON
-            $jsonData = json_decode($contents, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            // Validate file is not empty
+            if (empty($contents) || trim($contents) === '') {
                 return $this->asJson([
-                    'error' => 'Invalid JSON file: ' . json_last_error_msg(),
+                    'error' => Craft::t('craft-lottie', 'The selected file is empty. Please select a valid Lottie animation file.'),
+                    'errorCode' => 'EMPTY_FILE',
                 ])->setStatusCode(400);
             }
 
-            // Get background color from metadata if exists
+            // Note: We don't validate file size here - Lottie files can be large
+            // If there's a need to limit size, it should be done at upload time via Craft's asset settings
+
+            // Validate it's a valid Lottie file
+            $validation = \vu\craftlottie\Plugin::getInstance()->getLottieValidator()->validateLottieFile($contents);
+            
+            if (!$validation['valid']) {
+                // Log the validation error for debugging
+                Craft::error('Lottie validation failed for asset ' . $assetId . ': ' . $validation['error'], __METHOD__);
+                return $this->asJson([
+                    'error' => Craft::t('craft-lottie', $validation['error']),
+                    'errorCode' => 'INVALID_LOTTIE',
+                ])->setStatusCode(400);
+            }
+
+            $jsonData = $validation['data'];
+
+            // Get metadata (background color and speed) if exists
             $metadata = (new \craft\db\Query())
-                ->select(['backgroundColor'])
+                ->select(['backgroundColor', 'speed'])
                 ->from('{{%lottie_metadata}}')
                 ->where(['assetId' => $assetId])
                 ->one();
@@ -98,13 +114,15 @@ class DefaultController extends Controller
             $response = [
                 'animation' => $jsonData,
                 'backgroundColor' => $metadata['backgroundColor'] ?? null,
+                'speed' => isset($metadata['speed']) ? (float)$metadata['speed'] : 1.0,
             ];
 
             return $this->asJson($response);
         } catch (\Exception $e) {
             Craft::error('Failed to read asset: ' . $e->getMessage(), __METHOD__);
             return $this->asJson([
-                'error' => 'Failed to read asset: ' . $e->getMessage(),
+                'error' => Craft::t('craft-lottie', 'Failed to read the file: {message}', ['message' => $e->getMessage()]),
+                'errorCode' => 'READ_ERROR',
             ])->setStatusCode(500);
         }
     }
@@ -120,14 +138,44 @@ class DefaultController extends Controller
         $assetId = $request->getBodyParam('assetId');
         $jsonDataString = $request->getBodyParam('jsonData');
         $backgroundColor = $request->getBodyParam('backgroundColor');
+        $speed = $request->getBodyParam('speed');
 
         // Parse the JSON string back to array
-        $jsonData = $jsonDataString ? json_decode($jsonDataString, true) : null;
+        $jsonData = null;
+        if ($jsonDataString) {
+            try {
+                $jsonData = json_decode($jsonDataString, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    return $this->asJson([
+                        'success' => false,
+                        'error' => Craft::t('craft-lottie', 'Invalid JSON data: {message}', ['message' => json_last_error_msg()]),
+                        'errorCode' => 'INVALID_JSON',
+                    ]);
+                }
+            } catch (\Exception $e) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('craft-lottie', 'Failed to parse JSON data: {message}', ['message' => $e->getMessage()]),
+                    'errorCode' => 'JSON_PARSE_ERROR',
+                ]);
+            }
+        }
 
         if (!$assetId || !$jsonData) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Asset ID and JSON data are required',
+                'error' => Craft::t('craft-lottie', 'Asset ID and JSON data are required'),
+                'errorCode' => 'MISSING_DATA',
+            ]);
+        }
+
+        // Validate the Lottie data before saving
+        $validation = \vu\craftlottie\Plugin::getInstance()->getLottieValidator()->validateLottieFile($jsonData);
+        if (!$validation['valid']) {
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('craft-lottie', $validation['error']),
+                'errorCode' => 'INVALID_LOTTIE',
             ]);
         }
 
@@ -172,19 +220,46 @@ class DefaultController extends Controller
             // Clean up temp file
             @unlink($tempPath);
 
-            // Save background color as metadata in a separate table
-            if ($backgroundColor !== null) {
-                Craft::$app->getDb()->createCommand()
-                    ->upsert('{{%lottie_metadata}}', [
-                        'assetId' => $assetId,
-                        'backgroundColor' => $backgroundColor,
-                        'dateUpdated' => date('Y-m-d H:i:s'),
-                    ], [
-                        'backgroundColor' => $backgroundColor,
-                        'dateUpdated' => date('Y-m-d H:i:s'),
-                    ])
-                    ->execute();
+            // Validate and normalize speed
+            $speedValue = 1.0;
+            if ($speed !== null && $speed !== '') {
+                $speedValue = (float)$speed;
+                // Clamp speed between 0.1 and 5.0
+                if ($speedValue < 0.1) {
+                    $speedValue = 0.1;
+                } elseif ($speedValue > 5.0) {
+                    $speedValue = 5.0;
+                }
             }
+
+            // Save metadata (background color and speed) in a separate table
+            $metadataData = [
+                'assetId' => $assetId,
+                'dateUpdated' => date('Y-m-d H:i:s'),
+            ];
+
+            if ($backgroundColor !== null && $backgroundColor !== '') {
+                // Validate hex color format
+                if (preg_match('/^#[0-9A-Fa-f]{6}$/', $backgroundColor)) {
+                    $metadataData['backgroundColor'] = $backgroundColor;
+                }
+            }
+
+            $metadataData['speed'] = $speedValue;
+
+            Craft::$app->getDb()->createCommand()
+                ->upsert('{{%lottie_metadata}}', [
+                    'assetId' => $assetId,
+                    'backgroundColor' => $metadataData['backgroundColor'] ?? null,
+                    'speed' => $speedValue,
+                    'dateCreated' => date('Y-m-d H:i:s'),
+                    'dateUpdated' => date('Y-m-d H:i:s'),
+                ], [
+                    'backgroundColor' => $metadataData['backgroundColor'] ?? null,
+                    'speed' => $speedValue,
+                    'dateUpdated' => date('Y-m-d H:i:s'),
+                ])
+                ->execute();
 
             return $this->asJson([
                 'success' => true,

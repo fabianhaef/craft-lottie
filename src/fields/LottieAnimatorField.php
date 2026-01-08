@@ -46,8 +46,30 @@ class LottieAnimatorField extends Field
             return null;
         }
 
-        // Return the value object which contains: assetId, data (modified JSON), speed
-        return $value;
+        // Validate and normalize the structure
+        $normalized = [
+            'assetId' => isset($value['assetId']) && is_numeric($value['assetId']) ? (int)$value['assetId'] : null,
+            'data' => $value['data'] ?? null,
+            'speed' => isset($value['speed']) && is_numeric($value['speed']) ? (float)$value['speed'] : 1.0,
+            'backgroundColor' => isset($value['backgroundColor']) && is_string($value['backgroundColor']) ? $value['backgroundColor'] : null,
+        ];
+
+        // If no assetId, return null
+        if (!$normalized['assetId']) {
+            return null;
+        }
+
+        // Validate speed range
+        if ($normalized['speed'] < 0.1 || $normalized['speed'] > 5.0) {
+            $normalized['speed'] = 1.0;
+        }
+
+        // Validate background color format (hex color)
+        if ($normalized['backgroundColor'] && !preg_match('/^#[0-9A-Fa-f]{6}$/', $normalized['backgroundColor'])) {
+            $normalized['backgroundColor'] = null;
+        }
+
+        return $normalized;
     }
 
     public function serializeValue(mixed $value, ?ElementInterface $element = null): mixed

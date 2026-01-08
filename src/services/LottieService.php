@@ -17,11 +17,14 @@ class LottieService extends Component
         $lottieData = null;
         $savedSpeed = 1.0;
 
+        $backgroundColor = null;
+        
         if (is_array($fieldValue)) {
-            // New format: array with assetId, data, speed
+            // New format: array with assetId, data, speed, backgroundColor
             $assetId = $fieldValue['assetId'] ?? null;
             $lottieData = $fieldValue['data'] ?? null;
             $savedSpeed = $fieldValue['speed'] ?? 1.0;
+            $backgroundColor = $fieldValue['backgroundColor'] ?? null;
         } elseif ($fieldValue instanceof Asset) {
             // Legacy: direct asset element
             $assetId = $fieldValue->id;
@@ -32,6 +35,24 @@ class LottieService extends Component
 
         if (!$assetId) {
             return Template::raw('');
+        }
+
+        // If speed/background not in field value, try to get from metadata
+        if ($savedSpeed === 1.0 || $backgroundColor === null) {
+            $metadata = (new \craft\db\Query())
+                ->select(['speed', 'backgroundColor'])
+                ->from('{{%lottie_metadata}}')
+                ->where(['assetId' => $assetId])
+                ->one();
+            
+            if ($metadata) {
+                if ($savedSpeed === 1.0 && isset($metadata['speed'])) {
+                    $savedSpeed = (float)$metadata['speed'];
+                }
+                if ($backgroundColor === null && isset($metadata['backgroundColor'])) {
+                    $backgroundColor = $metadata['backgroundColor'];
+                }
+            }
         }
 
         // Use saved speed unless explicitly overridden
@@ -52,10 +73,15 @@ class LottieService extends Component
         $options = array_merge($defaultOptions, $options);
         
         // Generate container HTML
+        $style = "width: {$options['width']}; height: {$options['height']};";
+        if ($backgroundColor) {
+            $style .= " background-color: {$backgroundColor};";
+        }
+        
         $containerAttributes = [
             'id' => $options['id'],
             'class' => $options['class'],
-            'style' => "width: {$options['width']}; height: {$options['height']};",
+            'style' => $style,
         ];
         
         $attributeString = '';

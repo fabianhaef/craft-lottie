@@ -64,10 +64,8 @@
 
           new LottieEditor(namespacedId, {
               assetId: {{ assetId ? assetId : 'null' }},
-              existingData: {{ lottieData ? lottieData|json_encode|raw : 'null' }},
-              backgroundColor: {{ backgroundColor ? ("'" ~ backgroundColor ~ "'")|raw : 'null' }},
-              enableColorEditing: {{ field.enableColorEditing ? 'true' : 'false' }},
-              enableSpeedControl: {{ field.enableSpeedControl ? 'true' : 'false' }}
+              existingData: {{ value ? value|json_encode|raw : 'null' }},
+              previewOnly: true
           });
       }
   })();

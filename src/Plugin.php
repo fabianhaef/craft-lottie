@@ -11,6 +11,7 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use vu\craftlottie\fields\LottieAnimatorField;
 use vu\craftlottie\services\LottieService;
+use vu\craftlottie\services\LottieValidator;
 use vu\craftlottie\variables\LottieVariable;
 use yii\base\Event;
 
@@ -25,7 +26,7 @@ use yii\base\Event;
  */
 class Plugin extends BasePlugin
 {
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.0.1';
     public bool $hasCpSettings = true;
     public bool $hasCpSection = true;
 
@@ -34,6 +35,7 @@ class Plugin extends BasePlugin
         return [
             'components' => [
                 'lottieService' => LottieService::class,
+                'lottieValidator' => LottieValidator::class,
             ],
         ];
     }
@@ -100,6 +102,14 @@ class Plugin extends BasePlugin
     public function getLottieService(): LottieService
     {
         return $this->get('lottieService');
+    }
+
+    /**
+     * Get the Lottie validator service
+     */
+    public function getLottieValidator(): LottieValidator
+    {
+        return $this->get('lottieValidator');
     }
 
     public function getCpNavItem(): ?array

@@ -1,5 +1,5 @@
 .lottie-field {
-    margin: 20px 0;
+    margin: 12px 0;
 }
 
 .lottie-upload-area {
@@ -64,15 +64,19 @@
 }
 
 .lottie-preview-container {
-    margin: 20px 0;
-    padding: 20px;
+    margin: 12px 0;
+    padding: 12px;
     background: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .lottie-preview {
-    width: 200px;
+    width: 100%;
+    max-width: 300px;
     height: 200px;
     border-radius: 4px;
     background: white;
@@ -81,22 +85,57 @@
     justify-content: center;
 }
 
+.lottie-error {
+    padding: 16px;
+    text-align: center;
+    color: #cf1124;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 4px;
+}
+
+.lottie-error p {
+    margin: 0 0 8px 0;
+}
+
+.lottie-error p:first-child {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.lottie-error p:last-child {
+    font-size: 12px;
+    color: #6b7280;
+}
+
 .lottie-color-editor {
-    margin: 15px 0;
+    margin: 12px 0;
+    padding: 10px 12px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.lottie-color-editor label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 13px;
 }
 
 .lottie-color-picker-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 8px;
+    margin-top: 8px;
 }
 
 .lottie-color-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
+    gap: 6px;
+    padding: 6px 8px;
     background: white;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -104,15 +143,70 @@
 }
 
 .lottie-color-swatch {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border-radius: 3px;
     border: 1px solid #ccc;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .lottie-speed-control {
-    margin: 15px 0;
+    margin: 12px 0;
+    padding: 10px 12px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.lottie-speed-control label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 13px;
+}
+
+.lottie-speed-control .flex {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lottie-speed-slider {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: #e2e8f0;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.lottie-speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4299e1;
+    cursor: pointer;
+}
+
+.lottie-speed-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4299e1;
+    cursor: pointer;
+    border: none;
+}
+
+.lottie-speed-value {
+    min-width: 40px;
+    text-align: center;
+    font-weight: 600;
+    color: #4299e1;
+    font-size: 14px;
 }
 
 .lottie-upload .field {
