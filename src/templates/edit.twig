@@ -74,6 +74,28 @@
                         }, '<div id="color-picker-container" class="lottie-color-picker-container">
                             <div class="lottie-colors-loading">' ~ extractingColors ~ '</div>
                         </div>') }}
+
+                        {% set textLabel = "Edit Text"|t('craft-lottie') %}
+                        {% set textInstructions = "Modify text content in the animation. Changes are applied in real-time."|t('craft-lottie') %}
+                        {% set extractingText = "Extracting text layers..."|t('craft-lottie') %}
+                        {{ forms.field({
+                            label: textLabel,
+                            instructions: textInstructions,
+                            id: 'text-editor-field'
+                        }, '<div id="text-editor-container" class="lottie-text-editor-container">
+                            <div class="lottie-text-loading">' ~ extractingText ~ '</div>
+                        </div>') }}
+
+                        {% set layersLabel = "Layer Management"|t('craft-lottie') %}
+                        {% set layersInstructions = "Show or hide layers in the animation. Changes are applied in real-time."|t('craft-lottie') %}
+                        {% set extractingLayers = "Extracting layers..."|t('craft-lottie') %}
+                        {{ forms.field({
+                            label: layersLabel,
+                            instructions: layersInstructions,
+                            id: 'layers-field'
+                        }, '<div id="layers-container" class="lottie-layers-container">
+                            <div class="lottie-layers-loading">' ~ extractingLayers ~ '</div>
+                        </div>') }}
                     </div>
                 </div>
             </div>
@@ -306,6 +328,167 @@
     font-style: italic;
 }
 
+.lottie-text-editor-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.lottie-text-loading {
+    padding: 20px;
+    text-align: center;
+    color: var(--light-text-color);
+    font-size: 14px;
+}
+
+.lottie-text-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--light-text-color);
+    font-size: 14px;
+    font-style: italic;
+}
+
+.lottie-text-item {
+    padding: 12px;
+    background: var(--gray-050);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--small-border-radius);
+    transition: all 0.2s;
+}
+
+.lottie-text-item:hover {
+    border-color: var(--link-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.lottie-text-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--hairline-color);
+}
+
+.lottie-text-input-wrapper {
+    margin-top: 8px;
+}
+
+.lottie-text-input-wrapper:first-of-type {
+    margin-top: 0;
+}
+
+.lottie-text-label {
+    display: block;
+    font-size: 12px;
+    color: var(--light-text-color);
+    margin-bottom: 4px;
+}
+
+.lottie-text-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--small-border-radius);
+    background: var(--input-bg);
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.lottie-text-input:focus {
+    outline: none;
+    border-color: var(--link-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.lottie-layers-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.lottie-layers-loading {
+    padding: 20px;
+    text-align: center;
+    color: var(--light-text-color);
+    font-size: 14px;
+}
+
+.lottie-layers-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--light-text-color);
+    font-size: 14px;
+    font-style: italic;
+}
+
+.lottie-layer-item {
+    padding: 10px 12px;
+    background: var(--gray-050);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--small-border-radius);
+    transition: all 0.2s;
+}
+
+.lottie-layer-item:hover {
+    border-color: var(--link-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.lottie-layer-toggle {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.lottie-layer-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.lottie-layer-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.lottie-layer-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lottie-layer-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.lottie-layer-type {
+    font-size: 11px;
+    color: var(--light-text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lottie-layer-item:has(.lottie-layer-checkbox:not(:checked)) {
+    opacity: 0.6;
+}
+
+.lottie-layer-item:has(.lottie-layer-checkbox:not(:checked)) .lottie-layer-name {
+    text-decoration: line-through;
+}
+
 .lottie-error {
     padding: 24px;
     text-align: center;
@@ -418,8 +601,16 @@ function initLottieEditor() {
                 speedInput.value = savedSpeed;
             }
 
+            // Validate data structure before proceeding
+            if (!lottieData || typeof lottieData !== 'object') {
+                showError('Invalid animation data structure', 'INVALID_DATA');
+                return;
+            }
+            
             renderAnimation();
             extractColors();
+            extractTextLayers();
+            extractLayers();
         })
         .catch(error => {
             console.error('Failed to load Lottie file:', error);
@@ -464,7 +655,12 @@ function initLottieEditor() {
 
     function renderAnimation() {
         if (lottieAnimation) {
-            lottieAnimation.destroy();
+            try {
+                lottieAnimation.destroy();
+            } catch (e) {
+                // Ignore destroy errors
+            }
+            lottieAnimation = null;
         }
 
         // Clear loading state
@@ -477,13 +673,39 @@ function initLottieEditor() {
             previewContainer.style.backgroundColor = '';
         }
 
+        if (!lottieData) {
+            previewContainer.innerHTML = '<div class="lottie-loading"><p style="color: #cf1124;">No animation data available</p></div>';
+            return;
+        }
+
         try {
+            // Create a clean copy without our internal flags
+            const animationDataCopy = JSON.parse(JSON.stringify(lottieData));
+            
+            // Remove our internal flags before rendering
+            cleanLottieData(animationDataCopy);
+            
+            // Validate and fix keyframe structures
+            fixKeyframeStructures(animationDataCopy);
+            
+            // Apply layer visibility by filtering layers (safer than modifying op)
+            if (animationDataCopy.layers && Array.isArray(animationDataCopy.layers) && lottieData.layers) {
+                // Filter out hidden layers for preview
+                animationDataCopy.layers = animationDataCopy.layers.filter((layer, index) => {
+                    const originalLayer = lottieData.layers[index];
+                    if (originalLayer && originalLayer._hidden === true) {
+                        return false; // Hide this layer
+                    }
+                    return true; // Show this layer
+                });
+            }
+            
             lottieAnimation = lottie.loadAnimation({
                 container: previewContainer,
                 renderer: 'svg',
                 loop: true,
                 autoplay: true,
-                animationData: lottieData
+                animationData: animationDataCopy
             });
 
             // Apply speed
@@ -495,9 +717,97 @@ function initLottieEditor() {
             }
         } catch (error) {
             console.error('Error rendering animation:', error);
-            previewContainer.innerHTML = '<div class="lottie-loading"><p style="color: #cf1124;">Error rendering animation: ' + error.message + '</p></div>';
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
+            console.error('Lottie data keys:', lottieData ? Object.keys(lottieData) : 'null');
+            showError('Error rendering animation: ' + error.message, 'RENDER_ERROR');
         }
     }
+
+    function fixKeyframeStructures(obj, path = '') {
+        // Recursively fix keyframe structures that might be missing 'a' property
+        if (Array.isArray(obj)) {
+            obj.forEach((item, idx) => fixKeyframeStructures(item, `${path}[${idx}]`));
+        } else if (obj && typeof obj === 'object' && obj !== null) {
+            // Check if this looks like a keyframe property (has 'k' but missing 'a')
+            if (obj.k !== undefined && obj.a === undefined) {
+                // Assume it's not animated if 'a' is missing
+                obj.a = 0;
+            }
+            
+            // Check common keyframe properties in transforms (ks object)
+            if (obj.ks && typeof obj.ks === 'object') {
+                const keyframeProps = ['o', 'r', 'p', 'a', 's', 't', 'sk', 'sa', 'sc', 'sw', 'rx', 'ry', 'rz', 'or'];
+                for (const prop of keyframeProps) {
+                    if (obj.ks[prop] && typeof obj.ks[prop] === 'object') {
+                        if (obj.ks[prop].k !== undefined && obj.ks[prop].a === undefined) {
+                            obj.ks[prop].a = 0;
+                        }
+                        // Fix nested keyframe arrays
+                        if (Array.isArray(obj.ks[prop].k)) {
+                            obj.ks[prop].k.forEach((kf, idx) => {
+                                if (kf && typeof kf === 'object' && kf.s !== undefined && kf.s !== null) {
+                                    // Keyframe has a value, ensure it's valid
+                                    if (typeof kf.s === 'object' && kf.s.a === undefined && kf.s.k !== undefined) {
+                                        kf.s.a = 0;
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Fix shape properties
+            if (Array.isArray(obj.shapes)) {
+                obj.shapes.forEach((shape, idx) => {
+                    if (shape && typeof shape === 'object') {
+                        // Fix shape transform properties
+                        if (shape.p && typeof shape.p === 'object' && shape.p.k !== undefined && shape.p.a === undefined) {
+                            shape.p.a = 0;
+                        }
+                        if (shape.s && typeof shape.s === 'object' && shape.s.k !== undefined && shape.s.a === undefined) {
+                            shape.s.a = 0;
+                        }
+                        // Fix color properties
+                        if (shape.c && typeof shape.c === 'object' && shape.c.k !== undefined && shape.c.a === undefined) {
+                            shape.c.a = 0;
+                        }
+                        if (shape.o && typeof shape.o === 'object' && shape.o.k !== undefined && shape.o.a === undefined) {
+                            shape.o.a = 0;
+                        }
+                    }
+                });
+            }
+            
+            // Recursively process nested objects
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key) && typeof obj[key] === 'object' && obj[key] !== null) {
+                    fixKeyframeStructures(obj[key], path ? `${path}.${key}` : key);
+                }
+            }
+        }
+    }
+
+    function cleanLottieData(obj) {
+        // Recursively remove our internal flags (_hidden, _originalOp)
+        if (Array.isArray(obj)) {
+            obj.forEach(item => cleanLottieData(item));
+        } else if (obj && typeof obj === 'object') {
+            // Remove internal flags but keep the structure
+            delete obj._hidden;
+            // Keep _originalOp for now as we need it for restoration
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    cleanLottieData(obj[key]);
+                }
+            }
+        }
+    }
+
 
     // Speed control synchronization
     function syncSpeed(value) {
@@ -546,6 +856,296 @@ function initLottieEditor() {
         }
         markAsChanged();
     });
+
+    // Extract text layers from Lottie JSON
+    function extractTextLayers() {
+        const textContainer = document.getElementById('text-editor-container');
+        if (!textContainer) return;
+
+        const textLayers = [];
+        findTextLayers(lottieData, textLayers);
+
+        textContainer.innerHTML = '';
+
+        if (textLayers.length === 0) {
+            textContainer.innerHTML = '<div class="lottie-text-empty">{{ "No editable text layers found in this animation"|t('craft-lottie') }}</div>';
+            return;
+        }
+
+        textLayers.forEach((textLayer, index) => {
+            createTextEditor(textLayer, index);
+        });
+    }
+
+    function findTextLayers(obj, textLayers, layerPath = '', layerIndex = 0) {
+        if (typeof obj !== 'object' || obj === null) return;
+
+        // Recursively search in layers array first (most common structure)
+        if (Array.isArray(obj.layers)) {
+            obj.layers.forEach((layer, index) => {
+                const currentPath = layerPath ? `${layerPath}.layers[${index}]` : `layers[${index}]`;
+                findTextLayers(layer, textLayers, currentPath, index);
+            });
+            return; // Don't process layers array itself as a text layer
+        }
+
+        // Check if this is a layer with text (ty === 5 means text layer)
+        if (obj.ty === 5 && obj.t) {
+            const textData = obj.t;
+            let texts = [];
+
+            // Handle different text data structures
+            // Structure: t.d.k[].s.t (keyframed) or t.d.k.s.t (static)
+            if (textData.d && textData.d.k) {
+                if (Array.isArray(textData.d.k)) {
+                    // Keyframed text: k is an array of keyframes
+                    textData.d.k.forEach((keyframe, kIndex) => {
+                        if (keyframe.s && typeof keyframe.s.t === 'string') {
+                            texts.push({
+                                text: keyframe.s.t,
+                                keyframeIndex: kIndex,
+                                isKeyframed: true,
+                                keyframeData: keyframe
+                            });
+                        }
+                    });
+                } else if (textData.d.k.s && typeof textData.d.k.s.t === 'string') {
+                    // Single keyframe or static text
+                    texts.push({
+                        text: textData.d.k.s.t,
+                        keyframeIndex: 0,
+                        isKeyframed: Array.isArray(textData.d.k) === false,
+                        keyframeData: textData.d.k
+                    });
+                }
+            }
+
+            if (texts.length > 0) {
+                textLayers.push({
+                    layerIndex: layerIndex,
+                    layerName: obj.nm || `Text Layer ${textLayers.length + 1}`,
+                    layerPath: layerPath,
+                    texts: texts,
+                    layerData: obj
+                });
+            }
+        }
+    }
+
+    function createTextEditor(textLayer, index) {
+        const textItem = document.createElement('div');
+        textItem.className = 'lottie-text-item';
+        textItem.dataset.layerIndex = textLayer.layerIndex;
+        textItem.dataset.layerPath = textLayer.layerPath;
+
+        const textHeader = document.createElement('div');
+        textHeader.className = 'lottie-text-header';
+        textHeader.textContent = textLayer.layerName;
+
+        textItem.appendChild(textHeader);
+
+        // Create input for each text in the layer
+        textLayer.texts.forEach((textObj, textIndex) => {
+            const textInputWrapper = document.createElement('div');
+            textInputWrapper.className = 'lottie-text-input-wrapper';
+
+            const textLabel = document.createElement('label');
+            textLabel.className = 'lottie-text-label';
+            if (textLayer.texts.length > 1) {
+                textLabel.textContent = `{{ "Text"|t('craft-lottie') }} ${textIndex + 1}${textObj.isKeyframed ? ' ({{ "Keyframe"|t('craft-lottie') }} ' + (textObj.keyframeIndex + 1) + ')' : ''}`;
+            } else {
+                textLabel.textContent = '{{ "Text Content"|t('craft-lottie') }}';
+            }
+
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.className = 'lottie-text-input';
+            textInput.value = textObj.text;
+            textInput.dataset.textIndex = textIndex;
+            textInput.dataset.keyframeIndex = textObj.keyframeIndex;
+            textInput.dataset.isKeyframed = textObj.isKeyframed;
+
+            textInput.addEventListener('input', function() {
+                updateText(textLayer, textIndex, this.value);
+            });
+
+            textInputWrapper.appendChild(textLabel);
+            textInputWrapper.appendChild(textInput);
+            textItem.appendChild(textInputWrapper);
+        });
+
+        document.getElementById('text-editor-container').appendChild(textItem);
+    }
+
+    function updateText(textLayer, textIndex, newText) {
+        const layer = getLayerByPath(lottieData, textLayer.layerPath);
+        if (!layer || !layer.t || !layer.t.d) {
+            console.warn('Could not find layer at path:', textLayer.layerPath);
+            return;
+        }
+
+        const textObj = textLayer.texts[textIndex];
+        
+        // Update the text in the JSON structure
+        if (Array.isArray(layer.t.d.k)) {
+            // Keyframed text: update specific keyframe
+            const keyframe = layer.t.d.k[textObj.keyframeIndex];
+            if (keyframe && keyframe.s) {
+                keyframe.s.t = newText;
+            }
+        } else if (layer.t.d.k && layer.t.d.k.s) {
+            // Static text or single keyframe
+            layer.t.d.k.s.t = newText;
+        }
+
+        // Update the text in our textLayer object for UI consistency
+        textObj.text = newText;
+
+        renderAnimation();
+        markAsChanged();
+    }
+
+    function getLayerByPath(obj, path) {
+        if (!path) return obj;
+        
+        // Handle paths like "layers[0]" or "layers[0].layers[1]"
+        const parts = path.split('.');
+        let current = obj;
+        
+        for (const part of parts) {
+            const arrayMatch = part.match(/^(\w+)\[(\d+)\]$/);
+            if (arrayMatch) {
+                const [, key, index] = arrayMatch;
+                if (current && current[key] && Array.isArray(current[key])) {
+                    const idx = parseInt(index);
+                    if (idx >= 0 && idx < current[key].length) {
+                        current = current[key][idx];
+                    } else {
+                        console.warn(`Index ${idx} out of bounds for ${key}`);
+                        return null;
+                    }
+                } else {
+                    console.warn(`Could not access ${key}[${index}]`);
+                    return null;
+                }
+            } else {
+                if (current && current[part]) {
+                    current = current[part];
+                } else {
+                    console.warn(`Could not access property ${part}`);
+                    return null;
+                }
+            }
+        }
+        
+        return current;
+    }
+
+    // Extract and manage layers
+    function extractLayers() {
+        const layersContainer = document.getElementById('layers-container');
+        if (!layersContainer) return;
+
+        if (!lottieData || !lottieData.layers || !Array.isArray(lottieData.layers)) {
+            layersContainer.innerHTML = '<div class="lottie-layers-empty">{{ "No layers found in this animation"|t('craft-lottie') }}</div>';
+            return;
+        }
+
+        layersContainer.innerHTML = '';
+
+        // Process layers in reverse order (top to bottom in UI, but maintain layer order)
+        const layers = [...lottieData.layers].reverse();
+        
+        layers.forEach((layer, index) => {
+            const originalIndex = lottieData.layers.length - 1 - index;
+            createLayerControl(layer, originalIndex);
+        });
+    }
+
+    function createLayerControl(layer, layerIndex) {
+        const layerItem = document.createElement('div');
+        layerItem.className = 'lottie-layer-item';
+        layerItem.dataset.layerIndex = layerIndex;
+
+        // Determine if layer is visible
+        // Check _hidden flag first, then check op > ip
+        const layerIp = layer.ip !== undefined ? layer.ip : 0;
+        const layerOp = layer.op !== undefined ? layer.op : (lottieData.op || 60);
+        const isVisible = layer._hidden === undefined ? (layerOp > layerIp) : !layer._hidden;
+
+        const layerToggle = document.createElement('label');
+        layerToggle.className = 'lottie-layer-toggle';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isVisible;
+        checkbox.className = 'lottie-layer-checkbox';
+        
+        const toggleLabel = document.createElement('span');
+        toggleLabel.className = 'lottie-layer-toggle-label';
+        
+        const layerInfo = document.createElement('div');
+        layerInfo.className = 'lottie-layer-info';
+        
+        const layerName = document.createElement('div');
+        layerName.className = 'lottie-layer-name';
+        layerName.textContent = layer.nm || `Layer ${layerIndex + 1}`;
+        
+        const layerType = document.createElement('div');
+        layerType.className = 'lottie-layer-type';
+        layerType.textContent = getLayerTypeName(layer.ty);
+
+        layerInfo.appendChild(layerName);
+        layerInfo.appendChild(layerType);
+
+        toggleLabel.appendChild(checkbox);
+        toggleLabel.appendChild(layerInfo);
+        layerToggle.appendChild(toggleLabel);
+
+        checkbox.addEventListener('change', function() {
+            toggleLayerVisibility(layerIndex, this.checked);
+        });
+
+        layerItem.appendChild(layerToggle);
+        document.getElementById('layers-container').appendChild(layerItem);
+    }
+
+    function getLayerTypeName(type) {
+        const types = {
+            0: 'Precomp',
+            1: 'Solid',
+            2: 'Image',
+            3: 'Null',
+            4: 'Shape',
+            5: 'Text',
+            6: 'Audio',
+            13: 'Camera'
+        };
+        return types[type] || `Type ${type}`;
+    }
+
+    function toggleLayerVisibility(layerIndex, visible) {
+        if (!lottieData.layers || !lottieData.layers[layerIndex]) {
+            console.warn('Layer not found at index:', layerIndex);
+            return;
+        }
+
+        const layer = lottieData.layers[layerIndex];
+        const animationOp = lottieData.op || 60;
+        const layerIp = layer.ip !== undefined ? layer.ip : 0;
+        
+        // Store original op if not already stored
+        if (!layer._originalOp) {
+            layer._originalOp = layer.op !== undefined ? layer.op : animationOp;
+        }
+
+        // Store visibility state
+        layer._hidden = !visible;
+
+        // Re-render with updated visibility
+        renderAnimation();
+        markAsChanged();
+    }
 
     // Extract colors from Lottie JSON
     function extractColors() {
@@ -697,12 +1297,35 @@ function initLottieEditor() {
         saveBtn.disabled = true;
         saveBtn.textContent = '{{ "Saving..."|t('craft-lottie') }}';
 
+        // Create a clean copy for saving (remove internal flags, apply layer visibility)
+        const dataToSave = JSON.parse(JSON.stringify(lottieData));
+        
+        // Apply layer visibility changes to the saved data
+        if (dataToSave.layers && Array.isArray(dataToSave.layers)) {
+            dataToSave.layers.forEach((layer, index) => {
+                const originalLayer = lottieData.layers[index];
+                if (originalLayer && originalLayer._hidden === true) {
+                    // Hide layer by setting op to ip
+                    const layerIp = layer.ip !== undefined ? layer.ip : 0;
+                    layer.op = layerIp;
+                }
+                // Remove internal flags
+                delete layer._hidden;
+                delete layer._originalOp;
+            });
+        }
+        
+        // Clean all internal flags from the entire structure
+        cleanLottieData(dataToSave);
+
         const formData = new FormData();
         formData.append('assetId', assetId);
-        formData.append('jsonData', JSON.stringify(lottieData));
+        formData.append('jsonData', JSON.stringify(dataToSave));
         formData.append('backgroundColor', backgroundColor || '');
         formData.append('speed', speedControl.value || '1.0');
         formData.append('{{ craft.app.request.csrfParam }}', '{{ craft.app.request.csrfToken }}');
+        
+        // Note: Text changes are already in lottieData from updateText() calls
 
         fetch('/actions/craft-lottie/default/save-asset-json', {
             method: 'POST',

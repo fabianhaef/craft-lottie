@@ -41,8 +41,16 @@ These test files are designed to test various validation scenarios for the Craft
 3. Verify that appropriate error messages are displayed
 4. Check that error codes match expectations
 
+### example-with-text.json
+- **Purpose**: Example Lottie file with text layers and multiple shape layers
+- **Contains**: 
+  - 1 Text layer ("Hello World")
+  - 2 Shape layers (Background Shape, Circle Shape)
+- **Use Case**: Test text editing and layer management features
+- **Note**: This is a valid Lottie file for testing editing features
+
 ## Notes
 
-- These files are intentionally broken for testing purposes
+- These files are intentionally broken for testing purposes (except example-with-text.json)
 - Do not use these files in production
 - For valid Lottie files, download from [LottieFiles](https://lottiefiles.com)

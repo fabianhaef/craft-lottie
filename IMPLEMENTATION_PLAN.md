@@ -90,10 +90,10 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
    - [x] Added file size validation (10MB max)
    - [x] Created testing documentation (TESTING.md)
 
-4. **Phase 2 Features (Not Started)**
-   - Dynamic text editing
-   - Layer management (show/hide layers)
-   - .lottie compressed format support
+4. **Phase 2 Features (In Progress)**
+   - ✅ Dynamic text editing - COMPLETED
+   - [ ] Layer management (show/hide layers)
+   - [ ] .lottie compressed format support
 
 5. **Phase 3 Features (Not Started)**
    - Brand palette (global plugin settings)
@@ -181,46 +181,71 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 
 **Goal**: Add advanced editing features and improve the authoring experience.
 
-#### 2.1 Dynamic Text Editing (Estimated: 8-10 hours)
+#### 2.1 Dynamic Text Editing ✅ COMPLETED
 
 **Tasks:**
-- [ ] Identify text layers in Lottie JSON structure
-- [ ] Create UI for editing text content
-- [ ] Implement text replacement logic
-- [ ] Handle keyframed text animations
-- [ ] Add preview of text changes
+- [x] Identify text layers in Lottie JSON structure
+- [x] Create UI for editing text content
+- [x] Implement text replacement logic
+- [x] Handle keyframed text animations
+- [x] Add preview of text changes
 
 **Technical Approach:**
-- Lottie text layers have structure: `layers[].t.d.k[].s.t` (text content)
-- Need to traverse layers, find text layers, extract text
-- Provide input fields for each text layer
+- Lottie text layers have structure: `layers[].ty === 5` (text layer type)
+- Text content in: `layers[].t.d.k[].s.t` (keyframed) or `layers[].t.d.k.s.t` (static)
+- Traverse layers array, find text layers (ty === 5), extract text
+- Provide input fields for each text layer with layer names
 - Update JSON structure when text changes
-- Re-render preview
+- Re-render preview automatically
 
-**Files to Create/Modify:**
-- `src/assets/js/lottie-editor.js` (add text editing methods)
-- `src/templates/_field-input.twig` (add text editing UI)
-- `src/assets/css/lottie-field.css` (style text editor)
+**Files Modified:**
+- `src/templates/edit.twig` - Added text editor UI and logic
+  - `extractTextLayers()` - Finds all text layers in Lottie JSON
+  - `findTextLayers()` - Recursively searches for text layers
+  - `createTextEditor()` - Creates UI for each text layer
+  - `updateText()` - Updates text in JSON and re-renders
+  - `getLayerByPath()` - Helper to navigate JSON structure
+- Added CSS styling for text editor components
 
-#### 2.2 Layer Management (Estimated: 6-8 hours)
+**Features:**
+- ✅ Detects text layers (type 5) in Lottie files
+- ✅ Handles both static and keyframed text
+- ✅ Shows layer names for easy identification
+- ✅ Real-time preview updates
+- ✅ Supports multiple text instances per layer
+- ✅ Clean UI matching Craft CMS design patterns
+
+#### 2.2 Layer Management ✅ COMPLETED
 
 **Tasks:**
-- [ ] Extract layer information from Lottie JSON
-- [ ] Create UI to list all layers
-- [ ] Add toggle controls to show/hide layers
-- [ ] Implement layer visibility logic
-- [ ] Update preview when layers are toggled
+- [x] Extract layer information from Lottie JSON
+- [x] Create UI to list all layers
+- [x] Add toggle controls to show/hide layers
+- [x] Implement layer visibility logic
+- [x] Update preview when layers are toggled
 
 **Technical Approach:**
 - Lottie layers are in `layers[]` array
 - Each layer has `ip` (in point), `op` (out point), `st` (start time)
-- To hide a layer, set `op` to 0 or remove from array (better: set `op` to 0)
-- Need to preserve layer structure for re-enabling
+- To hide a layer, set `op` to 0 (preserves structure for re-enabling)
+- Store original `op` value in `_originalOp` property for restoration
+- Layers displayed in reverse order (top layer first in UI)
 
-**Files to Create/Modify:**
-- `src/assets/js/lottie-editor.js` (add layer management)
-- `src/templates/_field-input.twig` (add layer list UI)
-- `src/assets/css/lottie-field.css` (style layer controls)
+**Files Modified:**
+- `src/templates/edit.twig` - Added layer management UI and logic
+  - `extractLayers()` - Extracts all layers from Lottie JSON
+  - `createLayerControl()` - Creates UI checkbox for each layer
+  - `toggleLayerVisibility()` - Shows/hides layers by setting `op` to 0 or restoring original
+  - `getLayerTypeName()` - Maps layer type numbers to readable names
+- Added CSS styling for layer controls
+
+**Features:**
+- ✅ Lists all layers with names and types
+- ✅ Checkbox toggles for show/hide
+- ✅ Visual feedback (strikethrough, opacity) for hidden layers
+- ✅ Real-time preview updates
+- ✅ Preserves layer structure (can re-enable hidden layers)
+- ✅ Shows layer types (Shape, Text, Precomp, etc.)
 
 #### 2.3 Asset Volume Integration (Estimated: 2-3 hours)
 
