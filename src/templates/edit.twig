@@ -528,8 +528,10 @@
 
 {% js %}
 // Load lottie-web library dynamically
+// Using version 5.9.6 which is more stable with minimal text layer structures
 const lottieScript = document.createElement('script');
-lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
+lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js';
+console.log('[DEBUG-I] Loading lottie-web version 5.9.6 instead of 5.12.2');
 lottieScript.onload = function() {
     initLottieEditor();
 };
@@ -580,6 +582,12 @@ function initLottieEditor() {
             return response.json();
         })
         .then(data => {
+            // #region agent log
+            console.log('[DEBUG-RAW] Raw data received from server:', data);
+            console.log('[DEBUG-RAW] data.animation exists:', !!data.animation);
+            console.log('[DEBUG-RAW] data type:', typeof data);
+            // #endregion
+            
             if (data.error) {
                 const errorCode = data.errorCode || 'UNKNOWN_ERROR';
                 const errorMessage = data.error || 'An unknown error occurred';
@@ -589,6 +597,10 @@ function initLottieEditor() {
             }
             
             lottieData = data.animation || data;
+            // #region agent log
+            console.log('[DEBUG-RAW] lottieData after assignment:', lottieData);
+            console.log('[DEBUG-RAW] Text layer t property:', lottieData?.layers?.find(l => l.ty === 5)?.t);
+            // #endregion
             backgroundColor = data.backgroundColor || null;
             const savedSpeed = data.speed || 1.0;
 
@@ -606,6 +618,11 @@ function initLottieEditor() {
                 showError('Invalid animation data structure', 'INVALID_DATA');
                 return;
             }
+            
+            // #region agent log
+            const textLayersOnLoad = (lottieData.layers||[]).filter(l=>l.ty===5).map(l=>({nm:l.nm,tStructure:l.t?{hasD:!!l.t.d,dHasK:!!l.t.d?.k,kType:l.t.d?.k?typeof l.t.d.k:'none',kIsArray:Array.isArray(l.t.d?.k),kLength:Array.isArray(l.t.d?.k)?l.t.d.k.length:null,firstKHasS:Array.isArray(l.t.d?.k)?!!l.t.d.k[0]?.s:!!l.t.d?.k?.s}:null}));
+            console.log('[DEBUG-D] Lottie data loaded - text layer structure', {textLayersOnLoad, totalLayers:lottieData.layers?.length});
+            // #endregion
             
             renderAnimation();
             extractColors();
@@ -654,6 +671,9 @@ function initLottieEditor() {
     }
 
     function renderAnimation() {
+        // #region agent log
+        console.log('[DEBUG-D] renderAnimation called', {hasLottieData:!!lottieData, layerCount:lottieData?.layers?.length});
+        // #endregion
         if (lottieAnimation) {
             try {
                 lottieAnimation.destroy();
@@ -682,11 +702,30 @@ function initLottieEditor() {
             // Create a clean copy without our internal flags
             const animationDataCopy = JSON.parse(JSON.stringify(lottieData));
             
+            // #region agent log
+            const textLayersBefore = (animationDataCopy.layers||[]).filter(l=>l.ty===5).map(l=>({nm:l.nm,hasT:!!l.t,hasTD:!!l.t?.d,tdkType:l.t?.d?.k?typeof l.t.d.k:'none',tdkIsArray:Array.isArray(l.t?.d?.k),tdkKeys:l.t?.d?.k&&typeof l.t.d.k==='object'&&!Array.isArray(l.t.d.k)?Object.keys(l.t.d.k):['array:'+l.t?.d?.k?.length],tdHasA:l.t?.d?.a!==undefined}));
+            console.log('[DEBUG-B] Text layers BEFORE fixKeyframeStructures', textLayersBefore);
+            // #endregion
+            
             // Remove our internal flags before rendering
             cleanLottieData(animationDataCopy);
             
-            // Validate and fix keyframe structures
-            fixKeyframeStructures(animationDataCopy);
+            // #region agent log - Test: Remove text layers to see if they're the problem
+            const textLayerCount = animationDataCopy.layers?.filter(l => l.ty === 5).length || 0;
+            console.log('[DEBUG-J] Testing by REMOVING text layers. Count:', textLayerCount);
+            
+            // TEMPORARILY remove text layers to test if they're causing the issue
+            if (animationDataCopy.layers) {
+                const originalCount = animationDataCopy.layers.length;
+                animationDataCopy.layers = animationDataCopy.layers.filter(l => l.ty !== 5);
+                console.log('[DEBUG-J] Removed text layers. Before:', originalCount, 'After:', animationDataCopy.layers.length);
+            }
+            // #endregion
+            
+            // #region agent log
+            const textLayersAfter = (animationDataCopy.layers||[]).filter(l=>l.ty===5).map(l=>({nm:l.nm,hasT:!!l.t,hasTD:!!l.t?.d,tdkType:l.t?.d?.k?typeof l.t.d.k:'none',tdkIsArray:Array.isArray(l.t?.d?.k),tdHasA:l.t?.d?.a!==undefined,tdA:l.t?.d?.a}));
+            console.log('[DEBUG-B] Text layers AFTER fixKeyframeStructures', textLayersAfter);
+            // #endregion
             
             // Apply layer visibility by filtering layers (safer than modifying op)
             if (animationDataCopy.layers && Array.isArray(animationDataCopy.layers) && lottieData.layers) {
@@ -699,6 +738,37 @@ function initLottieEditor() {
                     return true; // Show this layer
                 });
             }
+            
+            // #region agent log
+            console.log('[DEBUG-D] About to call lottie.loadAnimation', {finalLayerCount:animationDataCopy.layers?.length, hasV:!!animationDataCopy.v, hasFr:!!animationDataCopy.fr});
+            
+            // Dump ALL layers to inspect for issues
+            console.log('[DEBUG-G] Full layer inspection:');
+            (animationDataCopy.layers||[]).forEach((layer, idx) => {
+                const layerInfo = {
+                    idx,
+                    nm: layer.nm,
+                    ty: layer.ty,
+                    hasKs: !!layer.ks,
+                    ksKeys: layer.ks ? Object.keys(layer.ks) : [],
+                    // Check each transform property for issues
+                    ks_o: layer.ks?.o ? {a: layer.ks.o.a, hasK: layer.ks.o.k !== undefined} : 'MISSING',
+                    ks_r: layer.ks?.r ? {a: layer.ks.r.a, hasK: layer.ks.r.k !== undefined} : 'MISSING',
+                    ks_p: layer.ks?.p ? {a: layer.ks.p.a, hasK: layer.ks.p.k !== undefined} : 'MISSING',
+                    ks_a: layer.ks?.a ? {a: layer.ks.a.a, hasK: layer.ks.a.k !== undefined} : 'MISSING',
+                    ks_s: layer.ks?.s ? {a: layer.ks.s.a, hasK: layer.ks.s.k !== undefined} : 'MISSING',
+                    // Check for parent reference
+                    parent: layer.parent,
+                    // For text layers, check t structure
+                    hasT: layer.ty === 5 ? !!layer.t : 'N/A',
+                    t_keys: layer.ty === 5 && layer.t ? Object.keys(layer.t) : 'N/A'
+                };
+                console.log(`[DEBUG-G] Layer ${idx}:`, layerInfo);
+            });
+            
+            // Check assets too
+            console.log('[DEBUG-G] Assets:', animationDataCopy.assets?.length || 0, 'assets');
+            // #endregion
             
             lottieAnimation = lottie.loadAnimation({
                 container: previewContainer,
@@ -716,6 +786,9 @@ function initLottieEditor() {
                 lottieAnimation.setSpeed(1.0);
             }
         } catch (error) {
+            // #region agent log
+            console.log('[DEBUG-D] Error in renderAnimation', {errorMsg:error.message, errorName:error.name, stack:error.stack});
+            // #endregion
             console.error('Error rendering animation:', error);
             console.error('Error details:', {
                 message: error.message,
@@ -732,10 +805,31 @@ function initLottieEditor() {
         if (Array.isArray(obj)) {
             obj.forEach((item, idx) => fixKeyframeStructures(item, `${path}[${idx}]`));
         } else if (obj && typeof obj === 'object' && obj !== null) {
-            // Check if this looks like a keyframe property (has 'k' but missing 'a')
+            // Check if this looks like an animated property (has 'k' but missing 'a')
+            // BUT skip text document data (t.d) which has 'k' as keyframe array, not animated value
             if (obj.k !== undefined && obj.a === undefined) {
-                // Assume it's not animated if 'a' is missing
-                obj.a = 0;
+                // #region agent log
+                console.log('[DEBUG-B] fixKeyframeStructures: Found k without a', {path, objKeys:Object.keys(obj), kType:typeof obj.k, kIsArray:Array.isArray(obj.k)});
+                // #endregion
+                
+                // Skip if this looks like text document data (t.d)
+                // Text document 'k' is an array of keyframes with 's' (style) and 't' (time) properties
+                const isTextDocumentData = Array.isArray(obj.k) && obj.k.length > 0 && 
+                    obj.k[0] && typeof obj.k[0] === 'object' && 
+                    (obj.k[0].s !== undefined || obj.k[0].t !== undefined);
+                
+                if (isTextDocumentData) {
+                    // #region agent log
+                    console.log('[DEBUG-B] SKIPPING text document data - not adding a=0', {path});
+                    // #endregion
+                    // Don't add 'a' to text document data
+                } else {
+                    // #region agent log
+                    console.log('[DEBUG-B] Adding a=0 to animated property', {path});
+                    // #endregion
+                    // Assume it's not animated if 'a' is missing
+                    obj.a = 0;
+                }
             }
             
             // Check common keyframe properties in transforms (ks object)
@@ -978,7 +1072,13 @@ function initLottieEditor() {
     }
 
     function updateText(textLayer, textIndex, newText) {
+        // #region agent log
+        console.log('[DEBUG-A] updateText called', {layerPath:textLayer.layerPath, textIndex, newText, layerName:textLayer.layerName});
+        // #endregion
         const layer = getLayerByPath(lottieData, textLayer.layerPath);
+        // #region agent log
+        console.log('[DEBUG-C] Layer lookup result', {layerFound:!!layer, hasT:layer?.t!==undefined, hasTD:layer?.t?.d!==undefined, layerPath:textLayer.layerPath, tdkType:layer?.t?.d?.k?typeof layer.t.d.k:'none', tdkIsArray:Array.isArray(layer?.t?.d?.k)});
+        // #endregion
         if (!layer || !layer.t || !layer.t.d) {
             console.warn('Could not find layer at path:', textLayer.layerPath);
             return;
@@ -990,11 +1090,17 @@ function initLottieEditor() {
         if (Array.isArray(layer.t.d.k)) {
             // Keyframed text: update specific keyframe
             const keyframe = layer.t.d.k[textObj.keyframeIndex];
+            // #region agent log
+            console.log('[DEBUG-A] Updating keyframed text', {keyframeIndex:textObj.keyframeIndex, keyframeExists:!!keyframe, keyframeHasS:keyframe?.s!==undefined, beforeText:keyframe?.s?.t});
+            // #endregion
             if (keyframe && keyframe.s) {
                 keyframe.s.t = newText;
             }
         } else if (layer.t.d.k && layer.t.d.k.s) {
             // Static text or single keyframe
+            // #region agent log
+            console.log('[DEBUG-A] Updating static text', {beforeText:layer.t.d.k.s.t, tdkStructure:Object.keys(layer.t.d.k)});
+            // #endregion
             layer.t.d.k.s.t = newText;
         }
 

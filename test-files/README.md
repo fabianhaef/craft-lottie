@@ -49,6 +49,19 @@ These test files are designed to test various validation scenarios for the Craft
 - **Use Case**: Test text editing and layer management features
 - **Note**: This is a valid Lottie file for testing editing features
 
+### example-multiple-text.json
+- **Purpose**: Example Lottie file with multiple text layers for comprehensive testing
+- **Contains**: 
+  - 3 Text layers:
+    - "Title Text" - "Welcome" (large, bold, blue)
+    - "Subtitle Text" - "Edit this text" (medium, gray)
+    - "Body Text" - "This is editable text content" (small, dark gray)
+  - 2 Shape layers:
+    - Background (light gray rectangle)
+    - Decorative Shape (orange circle)
+- **Use Case**: Test multiple text editing, layer management, and color editing
+- **Note**: Perfect for testing text editing with different text layers and styles
+
 ## Notes
 
 - These files are intentionally broken for testing purposes (except example-with-text.json)
