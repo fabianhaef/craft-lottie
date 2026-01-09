@@ -2,13 +2,19 @@
 
 {% set title = "Lottie Animator" %}
 
+{% block actionButton %}
+    {% if primaryVolume %}
+        <form id="lottie-upload-form" enctype="multipart/form-data" style="display: inline-block;">
+            <input type="file" id="lottie-file-input" accept=".json,.lottie" style="display: none;">
+            <button type="button" id="lottie-upload-btn" class="btn submit add icon" data-icon="plus">
+                {{ "Upload Lottie File"|t('craft-lottie') }}
+            </button>
+        </form>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <div class="lottie-manager">
-        <div class="lottie-manager-header">
-            <h1>{{ "Lottie Animation Library"|t('craft-lottie') }}</h1>
-            <p>{{ "Manage and edit your Lottie animations. Select an animation below to preview and customize."|t('craft-lottie') }}</p>
-        </div>
-
         {% if not primaryVolume %}
             <div class="pane">
                 <div class="warning">
@@ -18,16 +24,6 @@
             </div>
         {% endif %}
 
-        {% if primaryVolume %}
-            <div class="lottie-upload-bar">
-                <form id="lottie-upload-form" enctype="multipart/form-data" class="lottie-upload-form-inline">
-                    <input type="file" id="lottie-file-input" accept=".json,.lottie" style="display: none;">
-                    <button type="button" id="lottie-upload-btn" class="btn submit add icon" data-icon="plus">
-                        {{ "Upload Lottie File"|t('craft-lottie') }}
-                    </button>
-                </form>
-            </div>
-        {% endif %}
 
         {% if primaryVolume and lottieAssets|length > 0 %}
             <div class="lottie-list">
@@ -112,20 +108,6 @@
 .warning a {
     color: #856404;
     text-decoration: underline;
-}
-
-.lottie-upload-bar {
-    margin-bottom: 24px;
-    padding: 16px;
-    background: var(--pane-bg, #fff);
-    border: 1px solid var(--hairline-color, #e3e5e8);
-    border-radius: var(--pane-border-radius, 4px);
-    box-shadow: var(--pane-shadow, 0 1px 2px rgba(0, 0, 0, 0.05));
-}
-
-.lottie-upload-form-inline {
-    display: flex;
-    align-items: center;
 }
 {% endcss %}
 

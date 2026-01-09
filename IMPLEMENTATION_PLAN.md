@@ -265,7 +265,7 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 - [x] Implement .lottie file detection
 - [x] Add decompression logic
 - [x] Handle both .json and .lottie formats
-- [ ] Consider compression on save (optional - future enhancement)
+- [x] Compression on save (preserves original format)
 
 **Technical Notes:**
 - .lottie is a compressed binary format (typically gzipped JSON)
@@ -281,12 +281,18 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 - See README.md for detailed configuration instructions
 
 **Files Modified:**
-- ✅ `src/services/LottieValidator.php` (format detection & decompression)
-- ✅ `src/controllers/DefaultController.php` (handle .lottie files in upload/retrieval)
+- ✅ `src/services/LottieValidator.php` (format detection, decompression & compression)
+- ✅ `src/controllers/DefaultController.php` (handle .lottie files in upload/retrieval/save)
 - ✅ `src/templates/index.twig` (accept .lottie in upload)
 - ✅ `src/templates/_field-input.twig` (updated for .lottie support)
 
-**Status**: ✅ Complete (compression on save is optional future enhancement)
+**Compression on Save:**
+- Automatically preserves original file format (.json files saved as .json, .lottie files saved as .lottie)
+- Uses gzip compression (level 9) for .lottie files
+- Falls back to JSON if compression fails
+- Updates filename extension if format changes
+
+**Status**: ✅ Complete
 
 ### Phase 3: Power User & Brand Governance (Priority: LOW)
 

@@ -62,8 +62,21 @@ These test files are designed to test various validation scenarios for the Craft
 - **Use Case**: Test multiple text editing, layer management, and color editing
 - **Note**: Perfect for testing text editing with different text layers and styles
 
+### example-simple.json / example-simple.lottie
+- **Purpose**: Simple example Lottie animation for testing .lottie format support
+- **Contains**: 
+  - 1 Shape layer (rotating blue circle)
+  - Simple rotation animation (0° to 360° over 60 frames)
+- **Format**: Available in both `.json` and `.lottie` (compressed) formats
+- **Use Case**: 
+  - Test .lottie file upload and decompression
+  - Verify format detection works correctly
+  - Test that both formats render identically
+- **Note**: The `.lottie` file is a gzipped version of the JSON file (507 bytes vs 2.5KB), demonstrating the compression benefit
+
 ## Notes
 
-- These files are intentionally broken for testing purposes (except example-with-text.json)
+- These files are intentionally broken for testing purposes (except example files)
 - Do not use these files in production
 - For valid Lottie files, download from [LottieFiles](https://lottiefiles.com)
+- `.lottie` files are gzipped JSON files and are automatically decompressed by the plugin

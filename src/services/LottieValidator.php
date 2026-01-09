@@ -72,6 +72,25 @@ class LottieValidator extends Component
     }
 
     /**
+     * Compresses a JSON string to .lottie format
+     *
+     * @param string $jsonString JSON string to compress
+     * @return string Compressed .lottie content (gzipped)
+     * @throws \Exception If compression fails
+     */
+    public function compressLottie(string $jsonString): string
+    {
+        // Compress JSON using gzip (same format as .lottie files)
+        $compressed = @gzencode($jsonString, 9); // Level 9 = maximum compression
+        
+        if ($compressed === false) {
+            throw new \Exception('Failed to compress JSON to .lottie format.');
+        }
+
+        return $compressed;
+    }
+
+    /**
      * Validates that a JSON string is a valid Lottie animation
      *
      * @param string|array $data JSON string or decoded array

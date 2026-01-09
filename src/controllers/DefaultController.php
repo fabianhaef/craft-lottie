@@ -227,15 +227,49 @@ class DefaultController extends Controller
                 ]);
             }
 
-            // Create a temporary file with the new JSON content
-            $tempPath = Craft::$app->getPath()->getTempPath() . '/' . uniqid('lottie_') . '.json';
-            file_put_contents($tempPath, $jsonString);
+            // Determine if we should save as .lottie (compressed) or .json
+            // Preserve the original file format
+            $originalExtension = strtolower(pathinfo($asset->filename, PATHINFO_EXTENSION));
+            $shouldCompress = ($originalExtension === 'lottie');
+            
+            $validator = \vu\craftlottie\Plugin::getInstance()->getLottieValidator();
+            
+            // Prepare file content and extension
+            $fileContent = $jsonString;
+            $fileExtension = 'json';
+            $tempFileName = uniqid('lottie_') . '.json';
+            
+            if ($shouldCompress) {
+                // Compress to .lottie format
+                try {
+                    $fileContent = $validator->compressLottie($jsonString);
+                    $fileExtension = 'lottie';
+                    $tempFileName = uniqid('lottie_') . '.lottie';
+                } catch (\Exception $e) {
+                    Craft::warning('Failed to compress to .lottie format, saving as JSON instead: ' . $e->getMessage(), __METHOD__);
+                    // Fall back to JSON if compression fails
+                }
+            }
+
+            // Create a temporary file with the content
+            $tempPath = Craft::$app->getPath()->getTempPath() . '/' . $tempFileName;
+            file_put_contents($tempPath, $fileContent);
+
+            // Update filename if extension changed (shouldn't happen, but handle it)
+            $newFilename = $asset->filename;
+            if ($shouldCompress && $originalExtension !== 'lottie') {
+                // Change extension to .lottie
+                $newFilename = pathinfo($asset->filename, PATHINFO_FILENAME) . '.lottie';
+            } elseif (!$shouldCompress && $originalExtension === 'lottie') {
+                // Change extension to .json
+                $newFilename = pathinfo($asset->filename, PATHINFO_FILENAME) . '.json';
+            }
 
             // Replace the asset's file content
             $asset->setVolumeId($asset->volumeId);
             $asset->newFolderId = $asset->folderId;
             $asset->tempFilePath = $tempPath;
-            $asset->filename = $asset->filename;
+            $asset->filename = $newFilename;
 
             if (!Craft::$app->getElements()->saveElement($asset)) {
                 @unlink($tempPath);
