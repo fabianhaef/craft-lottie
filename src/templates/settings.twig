@@ -16,22 +16,22 @@
 
         <input type="hidden" name="pluginHandle" value="craft-lottie">
 
-        <h2>{{ "Lottie Volume Configuration"|t('craft-lottie') }}</h2>
-        <p class="light">{{ "Select one or more volumes where Lottie animation files should be stored. Only JSON files from these volumes will appear in the Lottie library."|t('craft-lottie') }}</p>
+        <h2 class="first">{{ "Lottie Volume Configuration"|t('craft-lottie') }}</h2>
 
         {% set allVolumes = craft.app.volumes.getAllVolumes() %}
-        {% set volumeOptions = {} %}
+        {% set volumeOptions = [] %}
         {% for volume in allVolumes %}
-            {% set volumeOptions = volumeOptions|merge({(volume.id): volume.name}) %}
+            {% set volumeOptions = volumeOptions|merge([{ label: volume.name, value: volume.id }]) %}
         {% endfor %}
 
-        {{ forms.checkboxSelectField({
-            label: "Lottie Volumes"|t('craft-lottie'),
-            instructions: "Select the volumes where Lottie files are stored. Files uploaded via the dashboard will be saved to the first selected volume."|t('craft-lottie'),
-            name: 'settings[lottieVolumes]',
+        {{ forms.selectField({
+            id: 'lottieVolumeId',
+            name: 'settings[lottieVolumeId]',
+            label: "Lottie Volume"|t('craft-lottie'),
+            instructions: "Select the volume where Lottie files are stored. Files uploaded via the dashboard will be saved to this volume."|t('craft-lottie'),
             options: volumeOptions,
-            values: settings.lottieVolumes ?? [],
-            errors: settings.getErrors('lottieVolumes')
+            value: settings.lottieVolumeId,
+            errors: settings.getErrors('lottieVolumeId')
         }) }}
 
         <div class="buttons">

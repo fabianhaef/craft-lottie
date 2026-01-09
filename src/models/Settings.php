@@ -11,9 +11,9 @@ use craft\base\Model;
 class Settings extends Model
 {
     /**
-     * @var array<int> Array of volume IDs where Lottie files should be stored
+     * @var int|null Volume ID where Lottie files should be stored
      */
-    public array $lottieVolumes = [];
+    public ?int $lottieVolumeId = null;
 
     /**
      * @inheritdoc
@@ -21,7 +21,7 @@ class Settings extends Model
     public function attributeLabels(): array
     {
         return [
-            'lottieVolumes' => Craft::t('craft-lottie', 'Lottie Volumes'),
+            'lottieVolumeId' => Craft::t('craft-lottie', 'Lottie Volume'),
         ];
     }
 
@@ -31,7 +31,25 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['lottieVolumes'], 'safe'],
+            [['lottieVolumeId'], 'safe'],
+            [['lottieVolumeId'], 'integer', 'min' => 1],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function init(): void
+    {
+        parent::init();
+
+        // Normalize volume ID to integer or null
+        if ($this->lottieVolumeId !== null) {
+            $this->lottieVolumeId = (int)$this->lottieVolumeId;
+            // Volume IDs in Craft CMS are positive integers starting from 1
+            if ($this->lottieVolumeId <= 0) {
+                $this->lottieVolumeId = null;
+            }
+        }
     }
 }

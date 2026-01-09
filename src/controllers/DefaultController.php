@@ -24,33 +24,31 @@ class DefaultController extends Controller
         $plugin = \vu\craftlottie\Plugin::getInstance();
         $settings = $plugin->getSettings();
         
-        // Get configured volumes
-        $volumeIds = $settings->lottieVolumes ?? [];
+        // Get configured volume ID
+        $volumeId = $settings->lottieVolumeId ?? null;
         
         // Build asset query
         $assetQuery = \craft\elements\Asset::find()
             ->kind('json')
             ->orderBy(['dateCreated' => SORT_DESC]);
         
-        // Filter by volumes if configured
-        if (!empty($volumeIds)) {
-            $assetQuery->volumeId($volumeIds);
+        // Filter by volume if configured
+        if ($volumeId && $volumeId > 0) {
+            $assetQuery->volumeId($volumeId);
         }
         
         $lottieAssets = $assetQuery->all();
         
-        // Get all volumes for upload dropdown
-        $allVolumes = Craft::$app->getVolumes()->getAllVolumes();
+        // Get the configured volume
         $primaryVolume = null;
-        if (!empty($volumeIds)) {
-            $primaryVolume = Craft::$app->getVolumes()->getVolumeById($volumeIds[0]);
+        if ($volumeId && $volumeId > 0) {
+            $primaryVolume = Craft::$app->getVolumes()->getVolumeById($volumeId);
         }
 
         return $this->renderTemplate('craft-lottie/index', [
             'title' => 'Lottie Animator',
             'lottieAssets' => $lottieAssets,
-            'allVolumes' => $allVolumes,
-            'configuredVolumes' => $volumeIds,
+            'configuredVolumeId' => $volumeId,
             'primaryVolume' => $primaryVolume,
         ]);
     }
@@ -306,23 +304,25 @@ class DefaultController extends Controller
         $plugin = \vu\craftlottie\Plugin::getInstance();
         $settings = $plugin->getSettings();
         
-        // Get configured volumes
-        $volumeIds = $settings->lottieVolumes ?? [];
+        // Get configured volume ID
+        $volumeId = $settings->lottieVolumeId ?? null;
         
-        if (empty($volumeIds)) {
+        if (!$volumeId || $volumeId <= 0) {
             return $this->asJson([
                 'success' => false,
-                'error' => Craft::t('craft-lottie', 'No volumes configured. Please configure Lottie volumes in plugin settings.'),
+                'error' => Craft::t('craft-lottie', 'No volume configured. Please configure a Lottie volume in plugin settings.'),
             ])->setStatusCode(400);
         }
         
-        // Use the first configured volume as the upload target
-        $volume = Craft::$app->getVolumes()->getVolumeById($volumeIds[0]);
+        // Get the volume by ID
+        $volume = Craft::$app->getVolumes()->getVolumeById($volumeId);
         
         if (!$volume) {
+            Craft::error("Volume lookup failed. Requested ID: {$volumeId}", __METHOD__);
+            
             return $this->asJson([
                 'success' => false,
-                'error' => Craft::t('craft-lottie', 'Configured volume not found.'),
+                'error' => Craft::t('craft-lottie', 'Configured volume (ID: {id}) not found. Please check your plugin settings.', ['id' => $volumeId]),
             ])->setStatusCode(400);
         }
         

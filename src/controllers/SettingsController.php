@@ -40,6 +40,22 @@ class SettingsController extends Controller
         $settings = $plugin->getSettings();
         $postedSettings = $this->request->getBodyParam('settings', []);
 
+        // Normalize volume ID to integer or null
+        if (isset($postedSettings['lottieVolumeId'])) {
+            $volumeId = $postedSettings['lottieVolumeId'];
+            if ($volumeId === '' || $volumeId === null) {
+                $postedSettings['lottieVolumeId'] = null;
+            } else {
+                $postedSettings['lottieVolumeId'] = (int)$volumeId;
+                // Volume IDs in Craft CMS are positive integers starting from 1
+                if ($postedSettings['lottieVolumeId'] <= 0) {
+                    $postedSettings['lottieVolumeId'] = null;
+                }
+            }
+        } else {
+            $postedSettings['lottieVolumeId'] = null;
+        }
+
         $settings->setAttributes($postedSettings, false);
 
         if (!$settings->validate()) {
