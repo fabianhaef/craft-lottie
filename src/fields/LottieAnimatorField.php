@@ -75,6 +75,9 @@ class LottieAnimatorField extends Field
 
     /**
      * Normalize interactions array
+     *
+     * @param array<int, array<string, mixed>>|null $interactions Raw interactions array
+     * @return array<int, array<string, mixed>> Normalized interactions array
      */
     private function normalizeInteractions(?array $interactions): array
     {

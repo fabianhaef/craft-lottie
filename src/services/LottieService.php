@@ -11,6 +11,13 @@ use Twig\Markup;
 
 class LottieService extends Component
 {
+    /**
+     * Render a Lottie animation
+     *
+     * @param mixed $fieldValue The field value (can be array, Asset, or asset ID)
+     * @param array<string, mixed> $options Rendering options (loop, autoplay, renderer, speed, width, height, id, class)
+     * @return Markup HTML markup with the animation container and initialization script
+     */
     public function render($fieldValue, array $options = []): Markup
     {
         // Handle different value formats
@@ -207,6 +214,11 @@ HTML;
 
     /**
      * Generate JavaScript code for interactions
+     *
+     * @param array<int, array<string, mixed>>|null $interactions Array of interaction configurations
+     * @param string $containerId The container element ID
+     * @param string $uniqueId Unique identifier for the animation instance
+     * @return string JavaScript code for all enabled interactions
      */
     private function generateInteractionsCode(?array $interactions, string $containerId, string $uniqueId): string
     {

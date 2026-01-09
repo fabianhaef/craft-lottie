@@ -18,6 +18,8 @@ class DefaultController extends Controller
 
     /**
      * Main index action - List all Lottie files
+     *
+     * @return Response The rendered template response
      */
     public function actionIndex(): Response
     {
@@ -63,6 +65,10 @@ class DefaultController extends Controller
 
     /**
      * Edit a specific Lottie animation
+     *
+     * @param int $assetId The asset ID to edit
+     * @return Response The rendered template response
+     * @throws \yii\web\NotFoundHttpException If the asset is not found
      */
     public function actionEdit(int $assetId): Response
     {
@@ -84,6 +90,9 @@ class DefaultController extends Controller
 
     /**
      * Get asset JSON content directly
+     *
+     * @param int|null $assetId The asset ID (can also be passed as request parameter)
+     * @return Response JSON response containing animation data, metadata, and interactions
      */
     public function actionGetAssetJson(int $assetId = null): Response
     {
@@ -171,6 +180,9 @@ class DefaultController extends Controller
 
     /**
      * Save edited JSON data back to the asset
+     *
+     * @return Response JSON response indicating success or failure
+     * @throws \yii\web\BadRequestHttpException If not a POST request
      */
     public function actionSaveAssetJson(): Response
     {
@@ -368,6 +380,9 @@ class DefaultController extends Controller
 
     /**
      * Upload a Lottie file to the configured volume
+     *
+     * @return Response JSON response with asset ID and filename on success, or error message on failure
+     * @throws \yii\web\BadRequestHttpException If not a POST request
      */
     public function actionUpload(): Response
     {
@@ -485,6 +500,12 @@ class DefaultController extends Controller
 
     /**
      * Save edited JSON data as a new asset (Save as Copy)
+     *
+     * Creates a new asset with a unique filename based on the original asset name and timestamp.
+     * Copies all metadata (backgroundColor, speed, interactions) to the new asset.
+     *
+     * @return Response JSON response with new asset ID and filename on success, or error message on failure
+     * @throws \yii\web\BadRequestHttpException If not a POST request
      */
     public function actionSaveAsNewAsset(): Response
     {

@@ -15,6 +15,8 @@ class SettingsController extends Controller
 {
     /**
      * Show settings page
+     *
+     * @return Response The rendered settings template
      */
     public function actionIndex(): Response
     {
@@ -34,6 +36,9 @@ class SettingsController extends Controller
 
     /**
      * Save plugin settings
+     *
+     * @return Response|null Redirect response on success, null on validation failure
+     * @throws \yii\web\BadRequestHttpException If not a POST request
      */
     public function actionSave(): ?Response
     {

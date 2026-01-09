@@ -369,29 +369,38 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 #### 3.3 Save as New Asset (Estimated: 6-8 hours)
 
 **Tasks:**
-- [ ] Add "Save as Copy" button to editor
-- [ ] Create new asset from modified JSON
-- [ ] Generate unique filename
-- [ ] Update field to reference new asset
-- [ ] Handle asset permissions
+- [x] Add "Save as Copy" button to editor
+- [x] Create new asset from modified JSON
+- [x] Generate unique filename
+- [x] Copy metadata to new asset
+- [x] Handle asset creation with proper permissions
 
 **Technical Approach:**
 - Use Craft's asset creation API
 - Create new asset in same volume or specified location
-- Generate filename: `original-name-edited-{timestamp}.json`
-- Update field value to new asset ID
-- Preserve all modifications
+- Generate filename: `original-name-edited-{timestamp}.{ext}`
+- Preserve all modifications (colors, text, layers, interactions)
+- Copy metadata (backgroundColor, speed, interactions) to new asset
 
-**Files to Create/Modify:**
-- `src/controllers/DefaultController.php` (save-as action)
-- `src/assets/js/lottie-editor.js` (save-as UI)
-- `src/templates/_field-input.twig` (save-as button)
+**Implementation Details:**
+- "Save as Copy" button added next to "Save Changes" button
+- New `actionSaveAsNewAsset()` controller method creates new asset
+- Unique filename generated with timestamp: `original-name-edited-{YmdHis}.{ext}`
+- New asset created in same folder and volume as original
+- All metadata copied to new asset's metadata table entry
+- Automatic redirect to new asset editor after successful save
+
+**Files Modified:**
+- ✅ `src/controllers/DefaultController.php` (added actionSaveAsNewAsset method)
+- ✅ `src/templates/edit.twig` (added Save as Copy button and JavaScript handler)
+
+**Status**: ✅ Complete
 
 ## Technical Debt & Improvements
 
 ### Code Quality
-- [ ] Add PHPStan level 8 compliance
-- [ ] Add comprehensive PHPDoc comments
+- [x] Add PHPStan level 8 compliance
+- [x] Add comprehensive PHPDoc comments
 - [ ] Refactor JavaScript for better maintainability
 - [ ] Add unit tests for critical functions
 - [ ] Add integration tests for field workflow
