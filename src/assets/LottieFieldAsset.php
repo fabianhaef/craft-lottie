@@ -16,7 +16,15 @@ class LottieFieldAsset extends AssetBundle
         ];
 
         $this->js = [
-            'js/lottie-editor.js',
+            'js/modules/LottieDataUtils.js',
+            'js/modules/AnimationRenderer.js',
+            'js/modules/ColorEditor.js',
+            'js/modules/TextEditor.js',
+            'js/modules/LayerManager.js',
+            'js/modules/InteractionManager.js',
+            'js/modules/DataManager.js',
+            'js/lottie-editor-main.js',
+            'js/lottie-editor.js', // Keep for field input
         ];
 
         $this->css = [

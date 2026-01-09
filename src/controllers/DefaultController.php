@@ -78,6 +78,9 @@ class DefaultController extends Controller
             throw new \yii\web\NotFoundHttpException('Asset not found');
         }
 
+        // Register the asset bundle for the editor
+        Craft::$app->getView()->registerAssetBundle(\vu\craftlottie\assets\LottieFieldAsset::class);
+
         $plugin = \vu\craftlottie\Plugin::getInstance();
         $settings = $plugin->getSettings();
         
