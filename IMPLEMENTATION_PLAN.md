@@ -412,12 +412,12 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 - [x] Optimize preview rendering
 
 ### User Experience
-- [ ] Add keyboard shortcuts
-- [ ] Improve loading states
-- [ ] Add undo/redo functionality
-- [ ] Better error messages
-- [ ] Add help text and tooltips
-- [ ] Responsive design improvements
+- [x] Add keyboard shortcuts
+- [x] Improve loading states
+- [x] Add undo/redo functionality
+- [x] Better error messages
+- [x] Add help text and tooltips
+- [x] Responsive design improvements
 
 ### Documentation
 - [ ] Complete README with examples

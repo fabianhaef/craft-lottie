@@ -22,6 +22,8 @@ class LottieEditorMain {
         this.interactionsContainer = document.getElementById('interactions-container');
         this.saveBtn = document.getElementById('save-btn');
         this.saveAsBtn = document.getElementById('save-as-btn');
+        this.undoBtn = document.getElementById('undo-btn');
+        this.redoBtn = document.getElementById('redo-btn');
 
         // State
         this.lottieData = null;
@@ -79,6 +81,13 @@ class LottieEditorMain {
             onError: (message, code) => this.showError(message, code)
         });
 
+        // Initialize history manager
+        this.historyManager = new HistoryManager(this);
+        
+        // Initialize keyboard shortcuts
+        this.keyboardShortcuts = new KeyboardShortcuts(this);
+        this.keyboardShortcuts.init();
+
         // Setup event listeners
         this.setupEventListeners();
     }
@@ -125,6 +134,11 @@ class LottieEditorMain {
         this.layerManager.setLottieData(this.lottieData);
         this.interactionManager.setInteractions(interactions);
 
+        // Save initial state to history
+        if (this.historyManager) {
+            this.historyManager.saveState();
+        }
+
         // Render everything
         this.animationRenderer.render(this.lottieData, this.backgroundColor, this.speed);
         this.colorEditor.extractColors();
@@ -132,6 +146,9 @@ class LottieEditorMain {
         this.layerManager.extractLayers();
         this.interactionManager.renderInteractions();
         this.interactionManager.initializeInteractionMenu();
+        
+        // Update history buttons
+        this.updateHistoryButtons();
 
         // Re-initialize menu after renderInteractions in case it was removed
         const originalRenderInteractions = this.interactionManager.renderInteractions.bind(this.interactionManager);
@@ -218,6 +235,23 @@ class LottieEditorMain {
                 this.save('saveAs');
             });
         }
+
+        // Undo/Redo button handlers
+        if (this.undoBtn) {
+            this.undoBtn.addEventListener('click', () => {
+                if (this.historyManager) {
+                    this.historyManager.undo();
+                }
+            });
+        }
+
+        if (this.redoBtn) {
+            this.redoBtn.addEventListener('click', () => {
+                if (this.historyManager) {
+                    this.historyManager.redo();
+                }
+            });
+        }
     }
 
     /**
@@ -246,6 +280,11 @@ class LottieEditorMain {
             if (result.success) {
                 if (saveType === 'save') {
                     this.hasChanges = false;
+                    // Clear history after successful save (start fresh)
+                    if (this.historyManager) {
+                        this.historyManager.clear();
+                        this.historyManager.saveState(); // Save current state as new baseline
+                    }
                     button.textContent = savedText;
                     setTimeout(() => {
                         button.textContent = buttonText;
@@ -299,6 +338,24 @@ class LottieEditorMain {
         if (this.saveBtn) {
             this.saveBtn.disabled = false;
         }
+        
+        // Save state to history (debounced)
+        if (this.historyManager && !this.historyManager.isUndoing) {
+            clearTimeout(this.historySaveTimeout);
+            this.historySaveTimeout = setTimeout(() => {
+                this.historyManager.saveState();
+            }, 500); // Debounce history saves
+        }
+    }
+
+    /**
+     * Update history button states
+     */
+    updateHistoryButtons() {
+        if (!this.undoBtn || !this.redoBtn) return;
+        
+        this.undoBtn.disabled = !this.historyManager.canUndo();
+        this.redoBtn.disabled = !this.historyManager.canRedo();
     }
 
     /**

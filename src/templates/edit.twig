@@ -12,9 +12,13 @@
                     <p class="light">{{ asset.volume.name }} • {{ asset.size|filesize }}</p>
                 </div>
                 <div class="flex gap">
-                    <a href="{{ url('craft-lottie') }}" class="btn">{{ "← Back to Library"|t('craft-lottie') }}</a>
-                    <button id="save-btn" class="btn submit" disabled>{{ "Save Changes"|t('craft-lottie') }}</button>
-                    <button id="save-as-btn" class="btn">{{ "Save as Copy"|t('craft-lottie') }}</button>
+                    <a href="{{ url('craft-lottie') }}" class="btn" title="{{ "Back to Lottie Library"|t('craft-lottie') }}">{{ "← Back to Library"|t('craft-lottie') }}</a>
+                    <div class="lottie-history-buttons">
+                        <button id="undo-btn" class="btn" disabled title="{{ "Undo (Ctrl+Z)"|t('craft-lottie') }}" data-icon="undo"></button>
+                        <button id="redo-btn" class="btn" disabled title="{{ "Redo (Ctrl+Shift+Z)"|t('craft-lottie') }}" data-icon="redo"></button>
+                    </div>
+                    <button id="save-btn" class="btn submit" disabled title="{{ "Save Changes (Ctrl+S)"|t('craft-lottie') }}">{{ "Save Changes"|t('craft-lottie') }}</button>
+                    <button id="save-as-btn" class="btn" title="{{ "Save as Copy (Ctrl+Shift+S)"|t('craft-lottie') }}">{{ "Save as Copy"|t('craft-lottie') }}</button>
                 </div>
             </div>
         </div>
@@ -27,8 +31,11 @@
                         <h2>{{ "Preview"|t('craft-lottie') }}</h2>
                         <div id="lottie-preview" class="lottie-preview-container" data-asset-id="{{ asset.id }}">
                             <div class="lottie-loading">
-                                <div class="spinner"></div>
-                                <p>{{ "Loading animation..."|t('craft-lottie') }}</p>
+                                <div class="lottie-loading-content">
+                                    <div class="spinner"></div>
+                                    <p class="lottie-loading-text">{{ "Loading animation..."|t('craft-lottie') }}</p>
+                                    <p class="lottie-loading-subtext">{{ "Please wait while we prepare the editor"|t('craft-lottie') }}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -41,14 +48,16 @@
                         
                         {% set speedLabel = "Playback Speed"|t('craft-lottie') %}
                         {% set speedInstructions = "Adjust the animation playback speed (0.1x to 5.0x)"|t('craft-lottie') %}
+                        {% set speedTooltip = "Use the slider or input field to change playback speed. Changes are applied in real-time."|t('craft-lottie') %}
                         {{ forms.field({
                             label: speedLabel,
                             instructions: speedInstructions,
-                            id: 'speed-field'
+                            id: 'speed-field',
+                            tip: speedTooltip
                         }, '<div class="lottie-speed-control-wrapper">
-                            <input type="range" id="speed-control" min="0.1" max="5" step="0.1" value="1.0" class="lottie-speed-slider">
+                            <input type="range" id="speed-control" min="0.1" max="5" step="0.1" value="1.0" class="lottie-speed-slider" title="' ~ speedTooltip ~ '">
                             <div class="lottie-speed-display">
-                                <input type="number" id="speed-input" min="0.1" max="5" step="0.1" value="1.0" class="lottie-speed-input">
+                                <input type="number" id="speed-input" min="0.1" max="5" step="0.1" value="1.0" class="lottie-speed-input" title="' ~ speedTooltip ~ '">
                                 <span class="lottie-speed-unit">x</span>
                             </div>
                         </div>') }}
@@ -198,19 +207,57 @@
     justify-content: center;
     gap: 12px;
     color: var(--light-text-color);
+    min-height: 400px;
+    padding: 40px;
+}
+
+.lottie-loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
 }
 
 .lottie-loading .spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--gray-200);
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--gray-200);
     border-top-color: var(--link-color);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
 
+.lottie-loading-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.lottie-loading-subtext {
+    font-size: 13px;
+    color: var(--light-text-color);
+    margin: 0;
+}
+
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+.lottie-history-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.lottie-history-buttons .btn {
+    min-width: 40px;
+    padding: 8px 12px;
+}
+
+.lottie-history-buttons .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .lottie-speed-control-wrapper {
@@ -567,29 +614,53 @@
 }
 
 .lottie-error {
-    padding: 24px;
+    padding: 32px 24px;
     text-align: center;
     background: #fef2f2;
     border: 1px solid #fecaca;
     border-radius: var(--small-border-radius);
+    max-width: 500px;
+    margin: 40px auto;
 }
 
-.lottie-error > div:first-child {
-    color: #cf1124;
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.lottie-error > div:nth-child(2) {
-    color: #6b7280;
-    font-size: 14px;
+.lottie-error-icon {
+    font-size: 48px;
     margin-bottom: 16px;
 }
 
-.lottie-error > div:last-child {
-    font-size: 12px;
+.lottie-error-title {
+    color: #cf1124;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.lottie-error-message {
+    color: #6b7280;
+    font-size: 15px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.lottie-error-suggestion {
+    color: #4b5563;
+    font-size: 14px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #fff;
+    border-radius: var(--small-border-radius);
+    border-left: 3px solid var(--link-color);
+    text-align: left;
+    line-height: 1.6;
+}
+
+.lottie-error-code {
+    font-size: 11px;
     color: #9ca3af;
+    font-family: monospace;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #fecaca;
 }
 
 .lottie-interactions-container {
@@ -669,6 +740,7 @@
     gap: 8px;
 }
 
+/* Responsive Design Improvements */
 @media (max-width: 1200px) {
     .lottie-editor-grid {
         grid-template-columns: 1fr;
@@ -676,6 +748,67 @@
     
     .lottie-controls-pane {
         order: -1;
+    }
+    
+    .lottie-editor-header .flex {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .lottie-editor-header .flex.gap {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .lottie-editor-header h1 {
+        font-size: 20px;
+    }
+    
+    .lottie-editor-header .flex.gap {
+        flex-direction: column;
+    }
+    
+    .lottie-editor-header .flex.gap > * {
+        width: 100%;
+    }
+    
+    .lottie-history-buttons {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .lottie-preview-container {
+        min-height: 300px;
+        max-height: 400px;
+    }
+    
+    .lottie-speed-control-wrapper {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .lottie-speed-display {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .lottie-background-control-wrapper {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .lottie-background-control-wrapper .btn {
+        width: 100%;
+    }
+    
+    .lottie-colors-extracted {
+        grid-template-columns: 1fr;
+    }
+    
+    .lottie-layers-container {
+        max-height: 300px;
     }
 }
 {% endcss %}
@@ -799,10 +932,11 @@ function initLottieEditor() {
             scrollTrigger: {{ "Scroll Trigger"|t('craft-lottie')|json_encode|raw }},
             clickAction: {{ "Click Action"|t('craft-lottie')|json_encode|raw }},
             hoverEffect: {{ "Hover Effect"|t('craft-lottie')|json_encode|raw }},
-            urlLink: {{ "URL Link"|t('craft-lottie')|json_encode|raw }}
-        }
-    });
+                   urlLink: {{ "URL Link"|t('craft-lottie')|json_encode|raw }},
+                   unsavedChanges: {{ "You have unsaved changes. Are you sure you want to leave?"|t('craft-lottie')|json_encode|raw }}
+               }
+           });
 
-    editor.init();
-}
+           editor.init();
+       }
 {% endjs %}

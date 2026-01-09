@@ -23,6 +23,8 @@ class LottieFieldAsset extends AssetBundle
             'js/modules/LayerManager.js',
             'js/modules/InteractionManager.js',
             'js/modules/DataManager.js',
+            'js/modules/HistoryManager.js',
+            'js/modules/KeyboardShortcuts.js',
             'js/lottie-editor-main.js',
             'js/lottie-editor.js', // Keep for field input
         ];

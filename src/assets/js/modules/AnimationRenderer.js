@@ -200,25 +200,64 @@ class AnimationRenderer {
     }
 
     /**
-     * Show error message
+     * Show error message with actionable guidance
      * @param {string} message - Error message
      * @param {string} errorCode - Error code
      */
     showError(message, errorCode = 'ERROR') {
+        // Get user-friendly error message and suggestions
+        const errorInfo = this.getErrorInfo(errorCode, message);
+        
         const errorHtml = `
-            <div class="lottie-error" style="padding: 24px; text-align: center;">
-                <div style="color: #cf1124; font-size: 18px; font-weight: 600; margin-bottom: 8px;">
-                    Unable to load animation
-                </div>
-                <div style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">
-                    ${LottieDataUtils.escapeHtml(message)}
-                </div>
-                <div style="font-size: 12px; color: #9ca3af;">
-                    Error code: ${errorCode}
-                </div>
+            <div class="lottie-error">
+                <div class="lottie-error-icon">⚠️</div>
+                <div class="lottie-error-title">${LottieDataUtils.escapeHtml(errorInfo.title)}</div>
+                <div class="lottie-error-message">${LottieDataUtils.escapeHtml(errorInfo.message)}</div>
+                ${errorInfo.suggestion ? `<div class="lottie-error-suggestion">${LottieDataUtils.escapeHtml(errorInfo.suggestion)}</div>` : ''}
+                <div class="lottie-error-code">Error code: ${errorCode}</div>
+                <button class="btn" onclick="location.reload()" style="margin-top: 16px;">Reload Page</button>
             </div>
         `;
         this.previewContainer.innerHTML = errorHtml;
+    }
+
+    /**
+     * Get user-friendly error information
+     * @param {string} errorCode - Error code
+     * @param {string} message - Original error message
+     * @returns {Object} Error information object
+     */
+    getErrorInfo(errorCode, message) {
+        const errorMap = {
+            'INVALID_ASSET_ID': {
+                title: 'Invalid Animation',
+                message: 'The animation file could not be found or is invalid.',
+                suggestion: 'Please go back to the library and select a valid Lottie animation file.'
+            },
+            'NETWORK_ERROR': {
+                title: 'Network Error',
+                message: 'Failed to load the animation. Please check your internet connection.',
+                suggestion: 'Try refreshing the page or check if the server is accessible.'
+            },
+            'INVALID_DATA': {
+                title: 'Invalid Animation Data',
+                message: 'The animation file appears to be corrupted or in an unsupported format.',
+                suggestion: 'Please ensure the file is a valid Lottie JSON or .lottie file.'
+            },
+            'RENDER_ERROR': {
+                title: 'Rendering Error',
+                message: 'The animation could not be displayed. This may be due to an unsupported feature or corrupted data.',
+                suggestion: 'Try opening the file in a Lottie viewer to verify it\'s valid, or contact support if the issue persists.'
+            }
+        };
+
+        const defaultInfo = {
+            title: 'Unable to Load Animation',
+            message: message || 'An unexpected error occurred.',
+            suggestion: 'Please try refreshing the page. If the problem persists, contact support.'
+        };
+
+        return errorMap[errorCode] || defaultInfo;
     }
 
     /**
