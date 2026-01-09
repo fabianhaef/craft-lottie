@@ -52,6 +52,7 @@ class LottieAnimatorField extends Field
             'data' => $value['data'] ?? null,
             'speed' => isset($value['speed']) && is_numeric($value['speed']) ? (float)$value['speed'] : 1.0,
             'backgroundColor' => isset($value['backgroundColor']) && is_string($value['backgroundColor']) ? $value['backgroundColor'] : null,
+            'interactions' => $this->normalizeInteractions($value['interactions'] ?? []),
         ];
 
         // If no assetId, return null
@@ -67,6 +68,58 @@ class LottieAnimatorField extends Field
         // Validate background color format (hex color)
         if ($normalized['backgroundColor'] && !preg_match('/^#[0-9A-Fa-f]{6}$/', $normalized['backgroundColor'])) {
             $normalized['backgroundColor'] = null;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Normalize interactions array
+     */
+    private function normalizeInteractions(?array $interactions): array
+    {
+        if (!is_array($interactions)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($interactions as $interaction) {
+            if (!is_array($interaction)) {
+                continue;
+            }
+
+            $type = $interaction['type'] ?? null;
+            if (!in_array($type, ['scroll', 'click', 'hover', 'url'])) {
+                continue;
+            }
+
+            $normalizedInteraction = [
+                'type' => $type,
+                'enabled' => isset($interaction['enabled']) ? (bool)$interaction['enabled'] : true,
+            ];
+
+            // Type-specific fields
+            switch ($type) {
+                case 'scroll':
+                    $normalizedInteraction['trigger'] = $interaction['trigger'] ?? 'onScroll';
+                    $normalizedInteraction['offset'] = isset($interaction['offset']) ? (float)$interaction['offset'] : 0.0;
+                    $normalizedInteraction['direction'] = $interaction['direction'] ?? 'forward';
+                    break;
+                case 'click':
+                    $normalizedInteraction['action'] = $interaction['action'] ?? 'play';
+                    break;
+                case 'hover':
+                    $normalizedInteraction['onEnter'] = $interaction['onEnter'] ?? 'play';
+                    $normalizedInteraction['onLeave'] = $interaction['onLeave'] ?? 'pause';
+                    break;
+                case 'url':
+                    $normalizedInteraction['url'] = $interaction['url'] ?? '';
+                    $normalizedInteraction['target'] = $interaction['target'] ?? '_self';
+                    $normalizedInteraction['layerName'] = $interaction['layerName'] ?? '';
+                    break;
+            }
+
+            $normalized[] = $normalizedInteraction;
         }
 
         return $normalized;

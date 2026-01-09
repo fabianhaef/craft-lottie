@@ -34,8 +34,178 @@
             errors: settings.getErrors('lottieVolumeId')
         }) }}
 
+        <hr>
+
+        <h2>{{ "Brand Palette"|t('craft-lottie') }}</h2>
+
+        {% set brandColorsLabel = "Brand Colors"|t('craft-lottie') %}
+        {% set brandColorsInstructions = "Define your brand color palette. These colors will be available in the color picker when editing Lottie animations, making it easy to maintain brand consistency."|t('craft-lottie') %}
+        {% set addColorLabel = "Add Color"|t('craft-lottie') %}
+
+        {{ forms.field({
+            label: brandColorsLabel,
+            instructions: brandColorsInstructions,
+            id: 'brand-palette-field',
+            errors: settings.getErrors('brandPalette')
+        }, '<div id="brand-palette-container" class="brand-palette-container">
+            <div id="brand-palette-colors"></div>
+            <button type="button" id="add-brand-color" class="btn small add icon">' ~ addColorLabel ~ '</button>
+        </div>') }}
+
         <div class="buttons">
             <button type="submit" class="btn submit">{{ "Save"|t('app') }}</button>
         </div>
     </form>
 {% endblock %}
+
+{% css %}
+.brand-palette-container {
+    margin-top: 12px;
+}
+
+#brand-palette-colors {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.brand-palette-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: var(--gray-050);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--small-border-radius);
+}
+
+.brand-palette-color-input {
+    width: 50px;
+    height: 36px;
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--small-border-radius);
+    cursor: pointer;
+    padding: 2px;
+    background: var(--input-bg);
+    flex-shrink: 0;
+}
+
+.brand-palette-color-text {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--small-border-radius);
+    background: var(--input-bg);
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.brand-palette-remove {
+    flex-shrink: 0;
+}
+{% endcss %}
+
+{% js %}
+(function() {
+    const paletteContainer = document.getElementById('brand-palette-colors');
+    const addColorBtn = document.getElementById('add-brand-color');
+    
+    if (!paletteContainer || !addColorBtn) return;
+    
+    // Load existing palette colors
+    const existingPalette = {{ brandPaletteJson|raw }};
+    
+    function renderPalette() {
+        paletteContainer.innerHTML = '';
+        
+        existingPalette.forEach((color, index) => {
+            createColorItem(color, index);
+        });
+    }
+    
+    function createColorItem(color, index) {
+        const item = document.createElement('div');
+        item.className = 'brand-palette-item';
+        item.dataset.index = index;
+        
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.className = 'brand-palette-color-input';
+        colorInput.value = color;
+        colorInput.dataset.index = index;
+        
+        const textInput = document.createElement('input');
+        textInput.type = 'text';
+        textInput.className = 'brand-palette-color-text';
+        textInput.value = color;
+        textInput.placeholder = '#000000';
+        textInput.dataset.index = index;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn small brand-palette-remove';
+        removeBtn.textContent = '{{ "Remove"|t('craft-lottie') }}';
+        removeBtn.dataset.index = index;
+        
+        // Sync color picker and text input
+        colorInput.addEventListener('input', function(e) {
+            const idx = parseInt(e.target.dataset.index);
+            const newColor = e.target.value.toUpperCase();
+            existingPalette[idx] = newColor;
+            textInput.value = newColor;
+        });
+        
+        textInput.addEventListener('input', function(e) {
+            const idx = parseInt(e.target.dataset.index);
+            let value = e.target.value.trim().toUpperCase();
+            
+            // Add # if missing
+            if (value && !value.startsWith('#')) {
+                value = '#' + value;
+            }
+            
+            // Validate hex color
+            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                existingPalette[idx] = value;
+                colorInput.value = value;
+            } else {
+                textInput.value = value;
+            }
+        });
+        
+        removeBtn.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.index);
+            existingPalette.splice(idx, 1);
+            renderPalette();
+        });
+        
+        item.appendChild(colorInput);
+        item.appendChild(textInput);
+        item.appendChild(removeBtn);
+        paletteContainer.appendChild(item);
+    }
+    
+    addColorBtn.addEventListener('click', function() {
+        existingPalette.push('#000000');
+        renderPalette();
+    });
+    
+    // Update form before submit
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function() {
+        // Create hidden inputs for each color
+        existingPalette.forEach((color, index) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'settings[brandPalette][]';
+            input.value = color;
+            form.appendChild(input);
+        });
+    });
+    
+    // Initial render
+    renderPalette();
+})();
+{% endjs %}

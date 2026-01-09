@@ -14,6 +14,7 @@
                 <div class="flex gap">
                     <a href="{{ url('craft-lottie') }}" class="btn">{{ "← Back to Library"|t('craft-lottie') }}</a>
                     <button id="save-btn" class="btn submit" disabled>{{ "Save Changes"|t('craft-lottie') }}</button>
+                    <button id="save-as-btn" class="btn">{{ "Save as Copy"|t('craft-lottie') }}</button>
                 </div>
             </div>
         </div>
@@ -95,6 +96,31 @@
                             id: 'layers-field'
                         }, '<div id="layers-container" class="lottie-layers-container">
                             <div class="lottie-layers-loading">' ~ extractingLayers ~ '</div>
+                        </div>') }}
+
+                        <hr>
+
+                        {% set interactionsLabel = "Interactions"|t('craft-lottie') %}
+                        {% set interactionsInstructions = "Configure interactive behaviors for the animation (scroll triggers, click actions, hover effects, URL links)."|t('craft-lottie') %}
+                        {% set addInteractionLabel = "Add Interaction"|t('craft-lottie') %}
+                        {% set scrollTriggerLabel = "Scroll Trigger"|t('craft-lottie') %}
+                        {% set clickActionLabel = "Click Action"|t('craft-lottie') %}
+                        {% set hoverEffectLabel = "Hover Effect"|t('craft-lottie') %}
+                        {% set urlLinkLabel = "URL Link"|t('craft-lottie') %}
+                        {{ forms.field({
+                            label: interactionsLabel,
+                            instructions: interactionsInstructions,
+                            id: 'interactions-field'
+                        }, '<div id="interactions-container" class="lottie-interactions-container">
+                            <div class="btn menubtn" id="add-interaction-btn" data-icon="plus">' ~ addInteractionLabel ~ '</div>
+                            <div class="menu" id="add-interaction-menu">
+                                <ul class="padded">
+                                    <li><a data-type="scroll" href="javascript:void(0)"><span class="icon" data-icon="arrows"></span> ' ~ scrollTriggerLabel ~ '</a></li>
+                                    <li><a data-type="click" href="javascript:void(0)"><span class="icon" data-icon="pointer"></span> ' ~ clickActionLabel ~ '</a></li>
+                                    <li><a data-type="hover" href="javascript:void(0)"><span class="icon" data-icon="cursor"></span> ' ~ hoverEffectLabel ~ '</a></li>
+                                    <li><a data-type="url" href="javascript:void(0)"><span class="icon" data-icon="world"></span> ' ~ urlLinkLabel ~ '</a></li>
+                                </ul>
+                            </div>
                         </div>') }}
                     </div>
                 </div>
@@ -274,10 +300,61 @@
 }
 
 .lottie-color-picker-container {
+    margin-top: 8px;
+}
+
+.lottie-palette-section {
+    margin-bottom: 20px;
+}
+
+.lottie-palette-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--medium-text-color);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lottie-palette-colors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.lottie-palette-swatch {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--hairline-color);
+    border-radius: var(--small-border-radius);
+    cursor: pointer;
+    padding: 0;
+    background: none;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.lottie-palette-swatch:hover {
+    border-color: var(--link-color);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.lottie-palette-swatch:active {
+    transform: scale(0.95);
+}
+
+.lottie-colors-separator {
+    height: 1px;
+    background: var(--hairline-color);
+    margin: 16px 0;
+}
+
+.lottie-colors-extracted {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 12px;
-    margin-top: 8px;
 }
 
 .lottie-color-item {
@@ -515,6 +592,83 @@
     color: #9ca3af;
 }
 
+.lottie-interactions-container {
+    margin-top: 8px;
+    position: relative;
+}
+
+#add-interaction-btn {
+    margin-bottom: 12px;
+}
+
+.lottie-interaction-item {
+    padding: 12px;
+    background: var(--gray-050);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--small-border-radius);
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+
+.lottie-interaction-item:hover {
+    border-color: var(--link-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.lottie-interaction-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.lottie-interaction-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.lottie-interaction-remove {
+    flex-shrink: 0;
+}
+
+.lottie-interaction-fields {
+    display: grid;
+    gap: 12px;
+}
+
+.lottie-interaction-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lottie-interaction-field label {
+    font-size: 12px;
+    color: var(--light-text-color);
+    font-weight: 500;
+}
+
+.lottie-interaction-field select,
+.lottie-interaction-field input {
+    padding: 6px 8px;
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--small-border-radius);
+    background: var(--input-bg);
+    font-size: 14px;
+}
+
+.lottie-interaction-field input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+.lottie-interaction-field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 @media (max-width: 1200px) {
     .lottie-editor-grid {
         grid-template-columns: 1fr;
@@ -531,7 +685,6 @@
 // Using version 5.9.6 which is more stable with minimal text layer structures
 const lottieScript = document.createElement('script');
 lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js';
-console.log('[DEBUG-I] Loading lottie-web version 5.9.6 instead of 5.12.2');
 lottieScript.onload = function() {
     initLottieEditor();
 };
@@ -551,6 +704,15 @@ function initLottieEditor() {
     const backgroundColorInput = document.getElementById('background-color');
     const clearBackgroundBtn = document.getElementById('clear-background');
 
+    // Get brand palette from template
+    const brandPalette = {{ brandPalette|default([])|json_encode|raw }};
+    
+    // Define interaction type labels as JavaScript constants
+    const scrollTriggerLabel = '{{ "Scroll Trigger"|t('craft-lottie')|e('js') }}';
+    const clickActionLabel = '{{ "Click Action"|t('craft-lottie')|e('js') }}';
+    const hoverEffectLabel = '{{ "Hover Effect"|t('craft-lottie')|e('js') }}';
+    const urlLinkLabel = '{{ "URL Link"|t('craft-lottie')|e('js') }}';
+
     // Get asset ID from data attribute
     const assetId = previewContainer.getAttribute('data-asset-id');
 
@@ -563,8 +725,10 @@ function initLottieEditor() {
     let lottieData = null;
     let hasChanges = false;
     let backgroundColor = null;
+    let interactions = [];
 
     const saveBtn = document.getElementById('save-btn');
+    const saveAsBtn = document.getElementById('save-as-btn');
 
     // Load the Lottie file via controller action
     const fetchUrl = '/actions/craft-lottie/default/get-asset-json?assetId=' + assetId;
@@ -582,11 +746,6 @@ function initLottieEditor() {
             return response.json();
         })
         .then(data => {
-            // #region agent log
-            console.log('[DEBUG-RAW] Raw data received from server:', data);
-            console.log('[DEBUG-RAW] data.animation exists:', !!data.animation);
-            console.log('[DEBUG-RAW] data type:', typeof data);
-            // #endregion
             
             if (data.error) {
                 const errorCode = data.errorCode || 'UNKNOWN_ERROR';
@@ -597,12 +756,9 @@ function initLottieEditor() {
             }
             
             lottieData = data.animation || data;
-            // #region agent log
-            console.log('[DEBUG-RAW] lottieData after assignment:', lottieData);
-            console.log('[DEBUG-RAW] Text layer t property:', lottieData?.layers?.find(l => l.ty === 5)?.t);
-            // #endregion
             backgroundColor = data.backgroundColor || null;
             const savedSpeed = data.speed || 1.0;
+            interactions = data.interactions || [];
 
             if (backgroundColor) {
                 backgroundColorInput.value = backgroundColor;
@@ -619,15 +775,11 @@ function initLottieEditor() {
                 return;
             }
             
-            // #region agent log
-            const textLayersOnLoad = (lottieData.layers||[]).filter(l=>l.ty===5).map(l=>({nm:l.nm,tStructure:l.t?{hasD:!!l.t.d,dHasK:!!l.t.d?.k,kType:l.t.d?.k?typeof l.t.d.k:'none',kIsArray:Array.isArray(l.t.d?.k),kLength:Array.isArray(l.t.d?.k)?l.t.d.k.length:null,firstKHasS:Array.isArray(l.t.d?.k)?!!l.t.d.k[0]?.s:!!l.t.d?.k?.s}:null}));
-            console.log('[DEBUG-D] Lottie data loaded - text layer structure', {textLayersOnLoad, totalLayers:lottieData.layers?.length});
-            // #endregion
-            
             renderAnimation();
             extractColors();
             extractTextLayers();
             extractLayers();
+            renderInteractions();
         })
         .catch(error => {
             console.error('Failed to load Lottie file:', error);
@@ -671,9 +823,6 @@ function initLottieEditor() {
     }
 
     function renderAnimation() {
-        // #region agent log
-        console.log('[DEBUG-D] renderAnimation called', {hasLottieData:!!lottieData, layerCount:lottieData?.layers?.length});
-        // #endregion
         if (lottieAnimation) {
             try {
                 lottieAnimation.destroy();
@@ -702,25 +851,17 @@ function initLottieEditor() {
             // Create a clean copy without our internal flags
             const animationDataCopy = JSON.parse(JSON.stringify(lottieData));
             
-            // #region agent log
-            const textLayersBefore = (animationDataCopy.layers||[]).filter(l=>l.ty===5).map(l=>({nm:l.nm,hasT:!!l.t,hasTD:!!l.t?.d,tdkType:l.t?.d?.k?typeof l.t.d.k:'none',tdkIsArray:Array.isArray(l.t?.d?.k),tdkKeys:l.t?.d?.k&&typeof l.t.d.k==='object'&&!Array.isArray(l.t.d.k)?Object.keys(l.t.d.k):['array:'+l.t?.d?.k?.length],tdHasA:l.t?.d?.a!==undefined}));
-            console.log('[DEBUG-B] Text layers BEFORE fixKeyframeStructures', textLayersBefore);
-            // #endregion
-            
             // Remove our internal flags before rendering
             cleanLottieData(animationDataCopy);
             
-            // #region agent log - FIX: Add missing required properties to text layers
+            
             // Text layers need t.p, t.m, and t.a to work properly with lottie-web
             if (animationDataCopy.layers && Array.isArray(animationDataCopy.layers)) {
                 animationDataCopy.layers.forEach((layer, idx) => {
                     if (layer.ty === 5 && layer.t) {
-                        console.log(`[DEBUG-FIX] Fixing text layer ${idx}, current t keys:`, Object.keys(layer.t));
                         
-                        // Add empty text path if missing
                         if (!layer.t.p) {
                             layer.t.p = {};
-                            console.log(`[DEBUG-FIX] Added empty t.p to layer ${idx}`);
                         }
                         
                         // Add text more options if missing
@@ -729,28 +870,18 @@ function initLottieEditor() {
                                 g: 1,
                                 a: { a: 0, k: [0, 0], ix: 2 }
                             };
-                            console.log(`[DEBUG-FIX] Added t.m to layer ${idx}`);
                         }
                         
                         // Add empty text animators array if missing
                         if (!layer.t.a) {
                             layer.t.a = [];
-                            console.log(`[DEBUG-FIX] Added empty t.a array to layer ${idx}`);
                         }
-                        
-                        console.log(`[DEBUG-FIX] Fixed text layer ${idx}, new t keys:`, Object.keys(layer.t));
                     }
                 });
             }
-            // #endregion
             
             // Re-enable keyframe structure fixes
             fixKeyframeStructures(animationDataCopy);
-            
-            // #region agent log
-            const textLayersAfter = (animationDataCopy.layers||[]).filter(l=>l.ty===5).map(l=>({nm:l.nm,hasT:!!l.t,hasTD:!!l.t?.d,tdkType:l.t?.d?.k?typeof l.t.d.k:'none',tdkIsArray:Array.isArray(l.t?.d?.k),tdHasA:l.t?.d?.a!==undefined,tdA:l.t?.d?.a}));
-            console.log('[DEBUG-B] Text layers AFTER fixKeyframeStructures', textLayersAfter);
-            // #endregion
             
             // Apply layer visibility by filtering layers (safer than modifying op)
             if (animationDataCopy.layers && Array.isArray(animationDataCopy.layers) && lottieData.layers) {
@@ -763,13 +894,7 @@ function initLottieEditor() {
                     return true; // Show this layer
                 });
             }
-            
-            // #region agent log
-            console.log('[DEBUG-D] About to call lottie.loadAnimation', {finalLayerCount:animationDataCopy.layers?.length, hasV:!!animationDataCopy.v, hasFr:!!animationDataCopy.fr});
-            
-            // Dump ALL layers to inspect for issues
-            console.log('[DEBUG-G] Full layer inspection:');
-            (animationDataCopy.layers||[]).forEach((layer, idx) => {
+                        (animationDataCopy.layers||[]).forEach((layer, idx) => {
                 const layerInfo = {
                     idx,
                     nm: layer.nm,
@@ -788,12 +913,8 @@ function initLottieEditor() {
                     hasT: layer.ty === 5 ? !!layer.t : 'N/A',
                     t_keys: layer.ty === 5 && layer.t ? Object.keys(layer.t) : 'N/A'
                 };
-                console.log(`[DEBUG-G] Layer ${idx}:`, layerInfo);
             });
             
-            // Check assets too
-            console.log('[DEBUG-G] Assets:', animationDataCopy.assets?.length || 0, 'assets');
-            // #endregion
             
             lottieAnimation = lottie.loadAnimation({
                 container: previewContainer,
@@ -811,9 +932,6 @@ function initLottieEditor() {
                 lottieAnimation.setSpeed(1.0);
             }
         } catch (error) {
-            // #region agent log
-            console.log('[DEBUG-D] Error in renderAnimation', {errorMsg:error.message, errorName:error.name, stack:error.stack});
-            // #endregion
             console.error('Error rendering animation:', error);
             console.error('Error details:', {
                 message: error.message,
@@ -833,26 +951,13 @@ function initLottieEditor() {
             // Check if this looks like an animated property (has 'k' but missing 'a')
             // BUT skip text document data (t.d) which has 'k' as keyframe array, not animated value
             if (obj.k !== undefined && obj.a === undefined) {
-                // #region agent log
-                console.log('[DEBUG-B] fixKeyframeStructures: Found k without a', {path, objKeys:Object.keys(obj), kType:typeof obj.k, kIsArray:Array.isArray(obj.k)});
-                // #endregion
-                
                 // Skip if this looks like text document data (t.d)
                 // Text document 'k' is an array of keyframes with 's' (style) and 't' (time) properties
                 const isTextDocumentData = Array.isArray(obj.k) && obj.k.length > 0 && 
                     obj.k[0] && typeof obj.k[0] === 'object' && 
                     (obj.k[0].s !== undefined || obj.k[0].t !== undefined);
                 
-                if (isTextDocumentData) {
-                    // #region agent log
-                    console.log('[DEBUG-B] SKIPPING text document data - not adding a=0', {path});
-                    // #endregion
-                    // Don't add 'a' to text document data
-                } else {
-                    // #region agent log
-                    console.log('[DEBUG-B] Adding a=0 to animated property', {path});
-                    // #endregion
-                    // Assume it's not animated if 'a' is missing
+                if (!isTextDocumentData) {
                     obj.a = 0;
                 }
             }
@@ -1097,13 +1202,7 @@ function initLottieEditor() {
     }
 
     function updateText(textLayer, textIndex, newText) {
-        // #region agent log
-        console.log('[DEBUG-A] updateText called', {layerPath:textLayer.layerPath, textIndex, newText, layerName:textLayer.layerName});
-        // #endregion
         const layer = getLayerByPath(lottieData, textLayer.layerPath);
-        // #region agent log
-        console.log('[DEBUG-C] Layer lookup result', {layerFound:!!layer, hasT:layer?.t!==undefined, hasTD:layer?.t?.d!==undefined, layerPath:textLayer.layerPath, tdkType:layer?.t?.d?.k?typeof layer.t.d.k:'none', tdkIsArray:Array.isArray(layer?.t?.d?.k)});
-        // #endregion
         if (!layer || !layer.t || !layer.t.d) {
             console.warn('Could not find layer at path:', textLayer.layerPath);
             return;
@@ -1115,17 +1214,11 @@ function initLottieEditor() {
         if (Array.isArray(layer.t.d.k)) {
             // Keyframed text: update specific keyframe
             const keyframe = layer.t.d.k[textObj.keyframeIndex];
-            // #region agent log
-            console.log('[DEBUG-A] Updating keyframed text', {keyframeIndex:textObj.keyframeIndex, keyframeExists:!!keyframe, keyframeHasS:keyframe?.s!==undefined, beforeText:keyframe?.s?.t});
-            // #endregion
             if (keyframe && keyframe.s) {
                 keyframe.s.t = newText;
             }
         } else if (layer.t.d.k && layer.t.d.k.s) {
             // Static text or single keyframe
-            // #region agent log
-            console.log('[DEBUG-A] Updating static text', {beforeText:layer.t.d.k.s.t, tdkStructure:Object.keys(layer.t.d.k)});
-            // #endregion
             layer.t.d.k.s.t = newText;
         }
 
@@ -1285,14 +1378,104 @@ function initLottieEditor() {
 
         colorContainer.innerHTML = '';
 
-        if (colors.size === 0) {
+        // Show brand palette first if available
+        if (brandPalette && brandPalette.length > 0) {
+            const paletteSection = document.createElement('div');
+            paletteSection.className = 'lottie-palette-section';
+            
+            const paletteTitle = document.createElement('div');
+            paletteTitle.className = 'lottie-palette-title';
+            paletteTitle.textContent = '{{ "Brand Palette"|t('craft-lottie') }}';
+            paletteSection.appendChild(paletteTitle);
+            
+            const paletteColors = document.createElement('div');
+            paletteColors.className = 'lottie-palette-colors';
+            
+            brandPalette.forEach((paletteColor) => {
+                createPaletteColorSwatch(paletteColor, paletteColors);
+            });
+            
+            paletteSection.appendChild(paletteColors);
+            colorContainer.appendChild(paletteSection);
+            
+            // Add separator if there are extracted colors
+            if (colors.size > 0) {
+                const separator = document.createElement('div');
+                separator.className = 'lottie-colors-separator';
+                colorContainer.appendChild(separator);
+            }
+        }
+
+        if (colors.size === 0 && (!brandPalette || brandPalette.length === 0)) {
             colorContainer.innerHTML = '<div class="lottie-colors-empty">{{ "No editable colors found in this animation"|t('craft-lottie') }}</div>';
             return;
         }
 
-        Array.from(colors).forEach((color, index) => {
-            createColorPicker(color, index);
+        // Show extracted colors from animation
+        if (colors.size > 0) {
+            const extractedSection = document.createElement('div');
+            extractedSection.className = 'lottie-colors-extracted';
+            
+            const extractedTitle = document.createElement('div');
+            extractedTitle.className = 'lottie-palette-title';
+            extractedTitle.textContent = '{{ "Animation Colors"|t('craft-lottie') }}';
+            extractedTitle.style.gridColumn = '1 / -1';
+            extractedSection.appendChild(extractedTitle);
+            
+            Array.from(colors).forEach((color, index) => {
+                createColorPicker(color, index, extractedSection);
+            });
+            
+            colorContainer.appendChild(extractedSection);
+        }
+    }
+    
+    function createPaletteColorSwatch(color, container) {
+        const swatch = document.createElement('button');
+        swatch.type = 'button';
+        swatch.className = 'lottie-palette-swatch';
+        swatch.style.backgroundColor = color;
+        swatch.title = color.toUpperCase();
+        swatch.dataset.color = color;
+        
+        swatch.addEventListener('click', function() {
+            // Apply this palette color to all matching colors in the animation
+            const extractedColors = new Set();
+            findColors(lottieData, extractedColors);
+            
+            // Find the closest matching color in the animation
+            let closestColor = null;
+            let minDistance = Infinity;
+            
+            extractedColors.forEach(extractedColor => {
+                const distance = colorDistance(color, extractedColor);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestColor = extractedColor;
+                }
+            });
+            
+            if (closestColor) {
+                updateColor(closestColor, color);
+                // Re-extract colors to update UI
+                extractColors();
+            } else {
+                Craft.cp.displayNotice('{{ "No colors found in animation to replace"|t('craft-lottie') }}');
+            }
         });
+        
+        container.appendChild(swatch);
+    }
+    
+    function colorDistance(color1, color2) {
+        const rgb1 = hexToRgbArray(color1);
+        const rgb2 = hexToRgbArray(color2);
+        if (!rgb1 || !rgb2) return Infinity;
+        
+        const r = rgb1[0] - rgb2[0];
+        const g = rgb1[1] - rgb2[1];
+        const b = rgb1[2] - rgb2[2];
+        return Math.sqrt(r * r + g * g + b * b);
     }
 
     function findColors(obj, colors, path = '') {
@@ -1337,7 +1520,7 @@ function initLottieEditor() {
         ] : null;
     }
 
-    function createColorPicker(color, index) {
+    function createColorPicker(color, index, container) {
         const colorItem = document.createElement('div');
         colorItem.className = 'lottie-color-item';
 
@@ -1361,7 +1544,7 @@ function initLottieEditor() {
 
         colorItem.appendChild(colorSwatch);
         colorItem.appendChild(colorLabel);
-        colorContainer.appendChild(colorItem);
+        (container || colorContainer).appendChild(colorItem);
     }
 
     function updateColor(oldColor, newColor) {
@@ -1421,6 +1604,313 @@ function initLottieEditor() {
                Math.abs(color[2] - targetRgb[2]) < tolerance;
     }
 
+    // Interactions management
+    const interactionsContainer = document.getElementById('interactions-container');
+
+    function renderInteractions() {
+        if (!interactionsContainer) return;
+        
+        // Ensure interactions is initialized
+        if (!interactions) {
+            interactions = [];
+        }
+        
+        // Clear existing interactions (except add button and menu)
+        const existingItems = interactionsContainer.querySelectorAll('.lottie-interaction-item');
+        existingItems.forEach(item => item.remove());
+        
+        if (interactions.length === 0) {
+            return;
+        }
+        
+        interactions.forEach((interaction, index) => {
+            createInteractionItem(interaction, index);
+        });
+    }
+
+    function createInteractionItem(interaction, index) {
+        const item = document.createElement('div');
+        item.className = 'lottie-interaction-item';
+        item.dataset.index = index;
+        
+        const header = document.createElement('div');
+        header.className = 'lottie-interaction-header';
+        
+        const title = document.createElement('div');
+        title.className = 'lottie-interaction-title';
+        title.textContent = getInteractionTypeLabel(interaction.type);
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn small lottie-interaction-remove';
+        removeBtn.textContent = '{{ "Remove"|t('craft-lottie') }}';
+        removeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            interactions.splice(index, 1);
+            renderInteractions();
+            markAsChanged();
+        });
+        
+        header.appendChild(title);
+        header.appendChild(removeBtn);
+        item.appendChild(header);
+        
+        const fields = document.createElement('div');
+        fields.className = 'lottie-interaction-fields';
+        
+        // Enabled checkbox
+        const enabledRow = document.createElement('div');
+        enabledRow.className = 'lottie-interaction-field-row';
+        const enabledCheckbox = document.createElement('input');
+        enabledCheckbox.type = 'checkbox';
+        enabledCheckbox.checked = interaction.enabled !== false;
+        enabledCheckbox.addEventListener('change', function() {
+            interactions[index].enabled = this.checked;
+            markAsChanged();
+        });
+        const enabledLabel = document.createElement('label');
+        enabledLabel.textContent = '{{ "Enabled"|t('craft-lottie') }}';
+        enabledRow.appendChild(enabledCheckbox);
+        enabledRow.appendChild(enabledLabel);
+        fields.appendChild(enabledRow);
+        
+        // Type-specific fields
+        switch (interaction.type) {
+            case 'scroll':
+                fields.appendChild(createSelectField('{{ "Trigger"|t('craft-lottie') }}', 'trigger', ['onScroll', 'onViewport', 'onScrollProgress'], interaction.trigger || 'onScroll', index));
+                fields.appendChild(createNumberField('{{ "Offset"|t('craft-lottie') }}', 'offset', interaction.offset || 0, index, 0, 1, 0.1));
+                fields.appendChild(createSelectField('{{ "Direction"|t('craft-lottie') }}', 'direction', ['forward', 'backward', 'both'], interaction.direction || 'forward', index));
+                break;
+            case 'click':
+                fields.appendChild(createSelectField('{{ "Action"|t('craft-lottie') }}', 'action', ['play', 'pause', 'toggle', 'restart'], interaction.action || 'play', index));
+                break;
+            case 'hover':
+                fields.appendChild(createSelectField('{{ "On Enter"|t('craft-lottie') }}', 'onEnter', ['play', 'pause', 'restart'], interaction.onEnter || 'play', index));
+                fields.appendChild(createSelectField('{{ "On Leave"|t('craft-lottie') }}', 'onLeave', ['play', 'pause', 'restart'], interaction.onLeave || 'pause', index));
+                break;
+            case 'url':
+                fields.appendChild(createTextField('{{ "URL"|t('craft-lottie') }}', 'url', interaction.url || '', index));
+                fields.appendChild(createSelectField('{{ "Target"|t('craft-lottie') }}', 'target', ['_self', '_blank', '_parent', '_top'], interaction.target || '_self', index));
+                fields.appendChild(createTextField('{{ "Layer Name"|t('craft-lottie') }}', 'layerName', interaction.layerName || '', index, '{{ "Optional: specific layer to make clickable"|t('craft-lottie') }}'));
+                break;
+        }
+        
+        item.appendChild(fields);
+        const addBtn = document.getElementById('add-interaction-btn');
+        if (addBtn) {
+            interactionsContainer.insertBefore(item, addBtn);
+        } else {
+            interactionsContainer.appendChild(item);
+        }
+    }
+
+    function createSelectField(label, fieldName, options, value, index) {
+        const field = document.createElement('div');
+        field.className = 'lottie-interaction-field';
+        
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label;
+        
+        const select = document.createElement('select');
+        options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt;
+            option.textContent = opt;
+            if (opt === value) option.selected = true;
+            select.appendChild(option);
+        });
+        select.addEventListener('change', function() {
+            interactions[index][fieldName] = this.value;
+            markAsChanged();
+        });
+        
+        field.appendChild(labelEl);
+        field.appendChild(select);
+        return field;
+    }
+
+    function createTextField(label, fieldName, value, index, placeholder = '') {
+        const field = document.createElement('div');
+        field.className = 'lottie-interaction-field';
+        
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value;
+        input.placeholder = placeholder;
+        input.addEventListener('input', function() {
+            interactions[index][fieldName] = this.value;
+            markAsChanged();
+        });
+        
+        field.appendChild(labelEl);
+        field.appendChild(input);
+        return field;
+    }
+
+    function createNumberField(label, fieldName, value, index, min, max, step) {
+        const field = document.createElement('div');
+        field.className = 'lottie-interaction-field';
+        
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = value;
+        input.min = min;
+        input.max = max;
+        input.step = step;
+        input.addEventListener('input', function() {
+            interactions[index][fieldName] = parseFloat(this.value) || 0;
+            markAsChanged();
+        });
+        
+        field.appendChild(labelEl);
+        field.appendChild(input);
+        return field;
+    }
+
+    function getInteractionTypeLabel(type) {
+        const labels = {
+            'scroll': '{{ "Scroll Trigger"|t('craft-lottie') }}',
+            'click': '{{ "Click Action"|t('craft-lottie') }}',
+            'hover': '{{ "Hover Effect"|t('craft-lottie') }}',
+            'url': '{{ "URL Link"|t('craft-lottie') }}'
+        };
+        return labels[type] || type;
+    }
+
+    // Initialize interaction type menu - use a function that can be called after DOM is ready
+    let menuBtn = null; // Store globally to prevent double-instantiation
+    
+    function initializeInteractionMenu() {
+        const addInteractionBtn = document.getElementById('add-interaction-btn');
+        
+        if (!addInteractionBtn) {
+            return;
+        }
+        
+        // Prevent double-instantiation
+        if (menuBtn || addInteractionBtn.hasAttribute('data-garnish-initialized')) {
+            return;
+        }
+        
+        if (addInteractionBtn) {
+        
+        // Function to add interaction
+        function addInteraction(type) {
+            if (!type || !['scroll', 'click', 'hover', 'url'].includes(type)) {
+                return;
+            }
+            
+            if (!interactions) {
+                interactions = [];
+            }
+            
+            const newInteraction = {
+                type: type,
+                enabled: true
+            };
+            
+            interactions.push(newInteraction);
+            renderInteractions();
+            markAsChanged();
+        }
+        
+        // Initialize Craft's menu button
+        try {
+            menuBtn = new Garnish.MenuBtn(addInteractionBtn, {
+                onOptionSelect: function(option) {
+                    // Get type from the option - it might be a DOM element or jQuery object
+                    let type = null;
+                    if (option && option.getAttribute) {
+                        // It's a DOM element
+                        type = option.getAttribute('data-type');
+                    } else if (option && option.$option) {
+                        // It's a jQuery-wrapped element
+                        type = option.$option.getAttribute('data-type');
+                    } else if (option && option.data) {
+                        // It has a data method (jQuery)
+                        type = option.data('type');
+                    } else if (option && option.attr) {
+                        // It has an attr method (jQuery)
+                        type = option.attr('data-type');
+                    }
+                    if (type) {
+                        addInteraction(type);
+                    }
+                }
+            });
+            
+            // Mark as initialized to prevent double-instantiation
+            addInteractionBtn.setAttribute('data-garnish-initialized', 'true');
+            
+            // Find the Garnish-created menu and populate it
+            setTimeout(function() {
+                const garnishMenuId = addInteractionBtn.getAttribute('aria-controls');
+                
+                if (garnishMenuId) {
+                    const garnishMenu = document.getElementById(garnishMenuId);
+                    if (garnishMenu) {
+                        // Populate the menu with our items - use the labels defined at the top of the JS block
+                        garnishMenu.innerHTML = '<ul class="padded">' +
+                            '<li><a href="javascript:void(0)" data-type="scroll"><span class="icon" data-icon="arrows"></span> ' + scrollTriggerLabel + '</a></li>' +
+                            '<li><a href="javascript:void(0)" data-type="click"><span class="icon" data-icon="pointer"></span> ' + clickActionLabel + '</a></li>' +
+                            '<li><a href="javascript:void(0)" data-type="hover"><span class="icon" data-icon="cursor"></span> ' + hoverEffectLabel + '</a></li>' +
+                            '<li><a href="javascript:void(0)" data-type="url"><span class="icon" data-icon="world"></span> ' + urlLinkLabel + '</a></li>' +
+                            '</ul>';
+                        
+                        // Attach click handlers
+                        const menuItems = garnishMenu.querySelectorAll('a[data-type]');
+                        menuItems.forEach(function(item) {
+                            item.addEventListener('click', function(e) {
+                                const type = this.getAttribute('data-type');
+                                addInteraction(type);
+                                if (menuBtn) {
+                                    menuBtn.hide();
+                                }
+                            });
+                        });
+                    }
+                }
+            }, 10);
+        } catch (e) {
+            console.error('Failed to initialize interaction menu:', e);
+        }
+        
+        // No fallback needed - Garnish.MenuBtn handles everything via menuOptions
+        }
+    }
+    
+    // Try to initialize menu immediately
+    initializeInteractionMenu();
+    
+    // Also try after a short delay in case DOM isn't ready
+    setTimeout(function() {
+        const btn = document.getElementById('add-interaction-btn');
+        if (btn && !btn.hasAttribute('data-garnish-initialized')) {
+            initializeInteractionMenu();
+        }
+    }, 100);
+    
+    // Re-initialize menu after renderInteractions in case it was removed
+    const originalRenderInteractions = renderInteractions;
+    renderInteractions = function() {
+        originalRenderInteractions();
+        // Re-initialize menu after rendering in case it was lost
+        setTimeout(function() {
+            const btn = document.getElementById('add-interaction-btn');
+            // Only re-initialize if button exists and hasn't been initialized yet
+            if (btn && !btn.hasAttribute('data-garnish-initialized')) {
+                initializeInteractionMenu();
+            }
+        }, 50);
+    };
+
     // Save button handler
     saveBtn.addEventListener('click', function() {
         if (!hasChanges) return;
@@ -1454,6 +1944,7 @@ function initLottieEditor() {
         formData.append('jsonData', JSON.stringify(dataToSave));
         formData.append('backgroundColor', backgroundColor || '');
         formData.append('speed', speedControl.value || '1.0');
+        formData.append('interactions', JSON.stringify(interactions || []));
         formData.append('{{ craft.app.request.csrfParam }}', '{{ craft.app.request.csrfToken }}');
         
         // Note: Text changes are already in lottieData from updateText() calls
@@ -1493,5 +1984,82 @@ function initLottieEditor() {
             Craft.cp.displayError('{{ "Failed to save animation:"|t('craft-lottie') }} ' + error.message);
         });
     });
+
+    // Save as Copy button handler
+    if (saveAsBtn) {
+        saveAsBtn.addEventListener('click', function() {
+        saveAsBtn.disabled = true;
+        saveAsBtn.textContent = '{{ "Saving..."|t('craft-lottie') }}';
+
+        // Create a clean copy for saving (remove internal flags, apply layer visibility)
+        const dataToSave = JSON.parse(JSON.stringify(lottieData));
+        
+        // Apply layer visibility changes to the saved data
+        if (dataToSave.layers && Array.isArray(dataToSave.layers)) {
+            dataToSave.layers.forEach((layer, index) => {
+                const originalLayer = lottieData.layers[index];
+                if (originalLayer && originalLayer._hidden === true) {
+                    // Hide layer by setting op to ip
+                    const layerIp = layer.ip !== undefined ? layer.ip : 0;
+                    layer.op = layerIp;
+                }
+                // Remove internal flags
+                delete layer._hidden;
+                delete layer._originalOp;
+            });
+        }
+        
+        // Clean all internal flags from the entire structure
+        cleanLottieData(dataToSave);
+
+        const formData = new FormData();
+        formData.append('assetId', assetId);
+        formData.append('jsonData', JSON.stringify(dataToSave));
+        formData.append('backgroundColor', backgroundColor || '');
+        formData.append('speed', speedControl.value || '1.0');
+        formData.append('interactions', JSON.stringify(interactions || []));
+        formData.append('{{ craft.app.request.csrfParam }}', '{{ craft.app.request.csrfToken }}');
+
+        fetch('/actions/craft-lottie/default/save-as-new-asset', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Server error: ${response.status}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                saveAsBtn.textContent = '{{ "Saved!"|t('craft-lottie') }}';
+                setTimeout(() => {
+                    saveAsBtn.textContent = '{{ "Save as Copy"|t('craft-lottie') }}';
+                    saveAsBtn.disabled = false;
+                }, 2000);
+                Craft.cp.displayNotice('{{ "Animation saved as new asset successfully"|t('craft-lottie') }}');
+                // Optionally redirect to the new asset
+                if (data.assetId) {
+                    setTimeout(() => {
+                        window.location.href = '/admin/craft-lottie/edit/' + data.assetId;
+                    }, 1500);
+                }
+            } else {
+                throw new Error(data.error || '{{ "Failed to save as new asset"|t('craft-lottie') }}');
+            }
+        })
+        .catch(error => {
+            console.error('Save as new asset failed:', error);
+            saveAsBtn.disabled = false;
+            saveAsBtn.textContent = '{{ "Save as Copy"|t('craft-lottie') }}';
+            Craft.cp.displayError('{{ "Failed to save as new asset:"|t('craft-lottie') }} ' + error.message);
+        });
+    });
+    }
 }
 {% endjs %}

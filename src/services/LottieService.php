@@ -2,6 +2,7 @@
 
 namespace vu\craftlottie\services;
 
+use Craft;
 use craft\base\Component;
 use craft\elements\Asset;
 use craft\helpers\Json;
@@ -37,22 +38,45 @@ class LottieService extends Component
             return Template::raw('');
         }
 
-        // If speed/background not in field value, try to get from metadata
-        if ($savedSpeed === 1.0 || $backgroundColor === null) {
-            $metadata = (new \craft\db\Query())
-                ->select(['speed', 'backgroundColor'])
-                ->from('{{%lottie_metadata}}')
-                ->where(['assetId' => $assetId])
-                ->one();
-            
-            if ($metadata) {
-                if ($savedSpeed === 1.0 && isset($metadata['speed'])) {
-                    $savedSpeed = (float)$metadata['speed'];
-                }
-                if ($backgroundColor === null && isset($metadata['backgroundColor'])) {
-                    $backgroundColor = $metadata['backgroundColor'];
+        $interactions = null;
+        
+        // Try to get interactions from field value first
+        if (is_array($fieldValue) && isset($fieldValue['interactions'])) {
+            $interactions = $fieldValue['interactions'];
+        }
+        
+        // Always try to get from metadata (interactions are stored there, not in field value)
+        $metadata = (new \craft\db\Query())
+            ->select(['speed', 'backgroundColor', 'interactions'])
+            ->from('{{%lottie_metadata}}')
+            ->where(['assetId' => $assetId])
+            ->one();
+        
+        if ($metadata) {
+            if ($savedSpeed === 1.0 && isset($metadata['speed'])) {
+                $savedSpeed = (float)$metadata['speed'];
+            }
+            if ($backgroundColor === null && isset($metadata['backgroundColor'])) {
+                $backgroundColor = $metadata['backgroundColor'];
+            }
+            // Always load interactions from metadata if available
+            if (isset($metadata['interactions']) && !empty($metadata['interactions'])) {
+                try {
+                    $decoded = Json::decode($metadata['interactions']);
+                    if (is_array($decoded) && !empty($decoded)) {
+                        $interactions = $decoded;
+                        Craft::info('Loaded ' . count($interactions) . ' interactions from metadata for asset ' . $assetId, __METHOD__);
+                    }
+                } catch (\Exception $e) {
+                    // Invalid JSON, use null
+                    Craft::warning('Failed to decode interactions JSON: ' . $e->getMessage(), __METHOD__);
                 }
             }
+        }
+        
+        // Log if no interactions found
+        if (!$interactions || empty($interactions)) {
+            Craft::info('No interactions found for asset ' . $assetId, __METHOD__);
         }
 
         // Use saved speed unless explicitly overridden
@@ -95,6 +119,9 @@ class LottieService extends Component
         $loop = $options['loop'] ? 'true' : 'false';
         $autoplay = $options['autoplay'] ? 'true' : 'false';
         $uniqueId = str_replace('-', '_', $containerId);
+        
+        // Generate interaction code
+        $interactionsCode = $this->generateInteractionsCode($interactions, $containerId, $uniqueId);
 
         // Use modified data if available, otherwise fetch from asset
         if ($lottieData) {
@@ -115,6 +142,10 @@ class LottieService extends Component
             animationData: animationData
         });
         animation.setSpeed({$speed});
+        
+        (function(anim) {
+            {$interactionsCode}
+        })(animation);
     }
 
     if (lottieScriptLoaded) {
@@ -139,15 +170,19 @@ HTML;
     function initLottie_{$uniqueId}() {
         fetch('/actions/craft-lottie/default/get-asset-json?assetId={$assetId}')
             .then(function(response) { return response.json(); })
-            .then(function(animationData) {
+            .then(function(data) {
                 var animation = lottie.loadAnimation({
                     container: document.getElementById('{$containerId}'),
                     renderer: '{$renderer}',
                     loop: {$loop},
                     autoplay: {$autoplay},
-                    animationData: animationData
+                    animationData: data.animation || data
                 });
                 animation.setSpeed({$speed});
+                
+                (function(anim) {
+                    {$interactionsCode}
+                })(animation);
             })
             .catch(function(error) {
                 console.error('Failed to load Lottie animation:', error);
@@ -168,5 +203,204 @@ HTML;
         }
         
         return Template::raw($html);
+    }
+
+    /**
+     * Generate JavaScript code for interactions
+     */
+    private function generateInteractionsCode(?array $interactions, string $containerId, string $uniqueId): string
+    {
+        if (!$interactions || !is_array($interactions) || empty($interactions)) {
+            return '';
+        }
+        
+        // Log for debugging
+        Craft::info('Generating interactions code for ' . count($interactions) . ' interactions', __METHOD__);
+
+        $code = '';
+        $containerVar = 'container_' . $uniqueId;
+        // Use 'anim' as the variable name since it's scoped in the IIFE
+        $animationVar = 'anim';
+
+        foreach ($interactions as $index => $interaction) {
+            if (!isset($interaction['type']) || !isset($interaction['enabled']) || !$interaction['enabled']) {
+                continue;
+            }
+
+            $type = $interaction['type'];
+            $interactionCode = '';
+
+            switch ($type) {
+                case 'scroll':
+                    $trigger = $interaction['trigger'] ?? 'onScroll';
+                    $offset = isset($interaction['offset']) ? (float)$interaction['offset'] : 0.0;
+                    $direction = $interaction['direction'] ?? 'forward';
+                    
+                    if ($trigger === 'onScroll') {
+                        $interactionCode = <<<JS
+(function() {
+    var container = document.getElementById('{$containerId}');
+    if (!container) {
+        console.warn('Container not found for scroll interaction: {$containerId}');
+        return;
+    }
+    var lastScrollY = window.scrollY;
+    var isScrolling = false;
+    
+    function handleScroll() {
+        if (isScrolling) return;
+        isScrolling = true;
+        requestAnimationFrame(function() {
+            var currentScrollY = window.scrollY;
+            var scrollDelta = currentScrollY - lastScrollY;
+            lastScrollY = currentScrollY;
+            
+            if (scrollDelta > 0 && ('{$direction}' === 'forward' || '{$direction}' === 'both')) {
+                anim.play();
+            } else if (scrollDelta < 0 && ('{$direction}' === 'backward' || '{$direction}' === 'both')) {
+                anim.setDirection(-1);
+                anim.play();
+            }
+            
+            isScrolling = false;
+        });
+    }
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+})();
+JS;
+                    } elseif ($trigger === 'onViewport') {
+                        $interactionCode = <<<JS
+(function() {
+    var container = document.getElementById('{$containerId}');
+    if (!container) {
+        console.warn('Container not found for viewport interaction: {$containerId}');
+        return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                anim.play();
+            } else {
+                anim.pause();
+            }
+        });
+    }, { threshold: {$offset} });
+    
+    observer.observe(container);
+})();
+JS;
+                    }
+                    break;
+
+                case 'click':
+                    $action = $interaction['action'] ?? 'play';
+                    $interactionCode = <<<JS
+(function() {
+    var container = document.getElementById('{$containerId}');
+    if (!container) {
+        console.warn('Container not found for click interaction: {$containerId}');
+        return;
+    }
+    container.style.cursor = 'pointer';
+    container.addEventListener('click', function() {
+        if ('{$action}' === 'play') {
+            anim.play();
+        } else if ('{$action}' === 'pause') {
+            anim.pause();
+        } else if ('{$action}' === 'toggle') {
+            if (anim.isPaused) {
+                anim.play();
+            } else {
+                anim.pause();
+            }
+        } else if ('{$action}' === 'restart') {
+            anim.goToAndPlay(0);
+        }
+    });
+})();
+JS;
+                    break;
+
+                case 'hover':
+                    $onEnter = $interaction['onEnter'] ?? 'play';
+                    $onLeave = $interaction['onLeave'] ?? 'pause';
+                    $interactionCode = <<<JS
+(function() {
+    var container = document.getElementById('{$containerId}');
+    if (!container) {
+        console.warn('Container not found for hover interaction: {$containerId}');
+        return;
+    }
+    container.addEventListener('mouseenter', function() {
+        if ('{$onEnter}' === 'play') {
+            anim.play();
+        } else if ('{$onEnter}' === 'pause') {
+            anim.pause();
+        } else if ('{$onEnter}' === 'restart') {
+            anim.goToAndPlay(0);
+        }
+    });
+    container.addEventListener('mouseleave', function() {
+        if ('{$onLeave}' === 'play') {
+            anim.play();
+        } else if ('{$onLeave}' === 'pause') {
+            anim.pause();
+        } else if ('{$onLeave}' === 'restart') {
+            anim.goToAndPlay(0);
+        }
+    });
+})();
+JS;
+                    break;
+
+                case 'url':
+                    $url = htmlspecialchars($interaction['url'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $target = htmlspecialchars($interaction['target'] ?? '_self', ENT_QUOTES, 'UTF-8');
+                    $layerName = htmlspecialchars($interaction['layerName'] ?? '', ENT_QUOTES, 'UTF-8');
+                    
+                    if ($layerName) {
+                        // Make specific layer clickable
+                        $interactionCode = <<<JS
+(function() {
+    var container = document.getElementById('{$containerId}');
+    if (!container) {
+        console.warn('Container not found for URL interaction: {$containerId}');
+        return;
+    }
+    var svgElements = container.querySelectorAll('[data-name="{$layerName}"]');
+    svgElements.forEach(function(el) {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', function() {
+            window.open('{$url}', '{$target}');
+        });
+    });
+})();
+JS;
+                    } else {
+                        // Make entire animation clickable
+                        $interactionCode = <<<JS
+(function() {
+    var container = document.getElementById('{$containerId}');
+    if (!container) {
+        console.warn('Container not found for URL interaction: {$containerId}');
+        return;
+    }
+    container.style.cursor = 'pointer';
+    container.addEventListener('click', function() {
+        window.open('{$url}', '{$target}');
+    });
+})();
+JS;
+                    }
+                    break;
+            }
+
+            if ($interactionCode) {
+                $code .= $interactionCode . "\n";
+            }
+        }
+
+        return $code;
     }
 }

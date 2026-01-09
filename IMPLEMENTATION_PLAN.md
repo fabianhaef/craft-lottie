@@ -247,7 +247,7 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 - ✅ Preserves layer structure (can re-enable hidden layers)
 - ✅ Shows layer types (Shape, Text, Precomp, etc.)
 
-#### 2.3 Asset Volume Integration (Estimated: 2-3 hours)
+#### 2.3 Asset Volume Integration ✅ COMPLETED
 
 **Tasks:**
 - [x] Verify asset selector is working correctly
@@ -257,7 +257,7 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 
 **Status**: ✅ Complete
 
-#### 2.4 .lottie Format Support (Estimated: 10-12 hours)
+#### 2.4 .lottie Format Support ✅ COMPLETED
 
 **Tasks:**
 - [x] Research .lottie format specification
@@ -301,12 +301,12 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 #### 3.1 Brand Palette (Estimated: 6-8 hours)
 
 **Tasks:**
-- [ ] Create plugin settings page
-- [ ] Add brand color palette configuration
-- [ ] Store palette in plugin settings
-- [ ] Integrate palette into field color picker
-- [ ] Show palette colors alongside custom colors
-- [ ] Add validation to restrict to palette (optional)
+- [x] Create plugin settings page
+- [x] Add brand color palette configuration
+- [x] Store palette in plugin settings
+- [x] Integrate palette into field color picker
+- [x] Show palette colors alongside custom colors
+- [ ] Add validation to restrict to palette (optional - future enhancement)
 
 **Technical Approach:**
 - Use Craft's plugin settings system
@@ -315,31 +315,56 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 - Display palette as swatches in color picker UI
 - Allow selection from palette or custom color
 
-**Files to Create/Modify:**
-- `src/Plugin.php` (add settings)
-- `src/templates/settings.twig` (settings page)
-- `src/assets/js/lottie-editor.js` (use palette)
-- `src/templates/_field-input.twig` (show palette)
+**Implementation Details:**
+- Brand palette stored as array of hex color codes in Settings model
+- Interactive UI in settings page to add/remove/edit palette colors
+- Palette colors displayed as clickable swatches in edit template
+- Clicking a palette color applies it to the closest matching color in animation
+- Palette colors shown separately from extracted animation colors
+- Visual distinction with section titles and separators
+
+**Files Modified:**
+- ✅ `src/models/Settings.php` (added brandPalette property with validation)
+- ✅ `src/templates/settings.twig` (added palette configuration UI with JavaScript)
+- ✅ `src/controllers/SettingsController.php` (handle palette saving)
+- ✅ `src/controllers/DefaultController.php` (pass palette to edit template)
+- ✅ `src/templates/edit.twig` (display palette and integrate with color picker)
+
+**Status**: ✅ Complete (validation to restrict to palette is optional future enhancement)
 
 #### 3.2 Advanced Interactivity (Estimated: 10-12 hours)
 
 **Tasks:**
-- [ ] Add URL linking to animation elements
-- [ ] Implement scroll-based playback triggers
-- [ ] Add click/hover interaction options
-- [ ] Create UI for configuring interactions
-- [ ] Generate interaction code for frontend
+- [x] Add URL linking to animation elements
+- [x] Implement scroll-based playback triggers
+- [x] Add click/hover interaction options
+- [x] Create UI for configuring interactions
+- [x] Generate interaction code for frontend
 
 **Technical Approach:**
-- Store interaction metadata in field value
-- Use lottie-web's event system
-- Add JavaScript for scroll detection
+- Store interaction metadata in field value and database
+- Use lottie-web's event system and native JavaScript events
+- Add JavaScript for scroll detection (scroll events, IntersectionObserver)
 - Generate frontend code in `LottieService::render()`
 
-**Files to Create/Modify:**
-- `src/assets/js/lottie-editor.js` (interaction UI)
-- `src/services/LottieService.php` (render interactions)
-- `src/templates/_field-input.twig` (interaction controls)
+**Implementation Details:**
+- Interactions stored in `lottie_metadata` table as JSON
+- Four interaction types supported:
+  - **Scroll**: `onScroll` (play on scroll direction) or `onViewport` (play when in viewport)
+  - **Click**: Play, pause, toggle, or restart on click
+  - **Hover**: Play/pause/restart on mouse enter/leave
+  - **URL**: Make animation or specific layer clickable with URL link
+- UI in edit template allows adding/removing/editing interactions
+- Frontend code automatically generated and injected into rendered animation
+
+**Files Modified:**
+- ✅ `src/fields/LottieAnimatorField.php` (added interactions normalization)
+- ✅ `src/templates/edit.twig` (added interaction configuration UI and JavaScript)
+- ✅ `src/controllers/DefaultController.php` (handle interactions in get/save actions)
+- ✅ `src/services/LottieService.php` (generate interaction JavaScript code)
+- ✅ `src/migrations/m260109_000000_add_interactions_to_lottie_metadata.php` (database migration)
+
+**Status**: ✅ Complete
 
 #### 3.3 Save as New Asset (Estimated: 6-8 hours)
 

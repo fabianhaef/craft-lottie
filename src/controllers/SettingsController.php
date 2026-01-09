@@ -22,9 +22,13 @@ class SettingsController extends Controller
         /** @var Settings $settings */
         $settings = $plugin->getSettings();
 
+        // Encode brand palette as JSON for JavaScript
+        $brandPaletteJson = \craft\helpers\Json::encode($settings->brandPalette ?? []);
+
         return $this->renderTemplate('craft-lottie/settings', [
             'plugin' => $plugin,
             'settings' => $settings,
+            'brandPaletteJson' => $brandPaletteJson,
         ]);
     }
 
@@ -54,6 +58,27 @@ class SettingsController extends Controller
             }
         } else {
             $postedSettings['lottieVolumeId'] = null;
+        }
+
+        // Normalize brand palette
+        if (isset($postedSettings['brandPalette']) && is_array($postedSettings['brandPalette'])) {
+            // Filter out empty values and normalize hex colors
+            $postedSettings['brandPalette'] = array_filter(
+                array_map(function($color) {
+                    $color = trim($color);
+                    // Ensure color starts with #
+                    if ($color && !str_starts_with($color, '#')) {
+                        $color = '#' . $color;
+                    }
+                    return strtoupper($color);
+                }, $postedSettings['brandPalette']),
+                function($color) {
+                    return !empty($color) && preg_match('/^#[0-9A-Fa-f]{6}$/', $color);
+                }
+            );
+            $postedSettings['brandPalette'] = array_values($postedSettings['brandPalette']); // Re-index
+        } else {
+            $postedSettings['brandPalette'] = [];
         }
 
         $settings->setAttributes($postedSettings, false);
