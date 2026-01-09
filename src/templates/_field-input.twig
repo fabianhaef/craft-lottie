@@ -21,7 +21,7 @@
         sources: field.defaultUploadLocationSource ? [field.defaultUploadLocationSource] : null,
         selectionLabel: "Select Lottie File"|t('craft-lottie'),
         criteria: {
-            kind: 'json'
+            kind: ['json']
         },
         limit: 1,
         elements: asset ? [asset] : null,

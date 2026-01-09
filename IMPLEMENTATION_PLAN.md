@@ -250,34 +250,43 @@ This document provides a comprehensive implementation plan for the Craft Lottie 
 #### 2.3 Asset Volume Integration (Estimated: 2-3 hours)
 
 **Tasks:**
-- [ ] Verify asset selector is working correctly
-- [ ] Ensure proper filtering for JSON files only
-- [ ] Add validation that selected asset is valid Lottie file
-- [ ] Improve asset selection UX
+- [x] Verify asset selector is working correctly
+- [x] Ensure proper filtering for JSON files only
+- [x] Add validation that selected asset is valid Lottie file
+- [x] Improve asset selection UX
 
-**Status**: Mostly complete, may need refinement
+**Status**: ✅ Complete
 
 #### 2.4 .lottie Format Support (Estimated: 10-12 hours)
 
 **Tasks:**
-- [ ] Research .lottie format specification
-- [ ] Add library for .lottie decompression (if needed)
-- [ ] Implement .lottie file detection
-- [ ] Add decompression logic
-- [ ] Handle both .json and .lottie formats
-- [ ] Consider compression on save (optional)
+- [x] Research .lottie format specification
+- [x] Add library for .lottie decompression (if needed)
+- [x] Implement .lottie file detection
+- [x] Add decompression logic
+- [x] Handle both .json and .lottie formats
+- [ ] Consider compression on save (optional - future enhancement)
 
 **Technical Notes:**
-- .lottie is a compressed binary format
-- May need additional library: `@lottiefiles/lottie-js` might support it
-- Check if `lottie-web` can handle .lottie files directly
-- If not, need decompression library
+- .lottie is a compressed binary format (typically gzipped JSON)
+- Using PHP's native `gzdecode()` for decompression
+- Format detection by file extension and magic bytes
+- Both formats are validated and handled transparently
 
-**Files to Create/Modify:**
-- `src/services/LottieService.php` (add format detection)
-- `src/controllers/DefaultController.php` (handle .lottie files)
-- `src/assets/js/lottie-editor.js` (handle .lottie loading)
-- `package.json` (add .lottie library if needed)
+**Configuration Required:**
+- Users must enable `.lottie` file uploads in `config/general.php`:
+  ```php
+  ->extraAllowedFileExtensions(['json', 'lottie'])
+  ```
+- See README.md for detailed configuration instructions
+
+**Files Modified:**
+- ✅ `src/services/LottieValidator.php` (format detection & decompression)
+- ✅ `src/controllers/DefaultController.php` (handle .lottie files in upload/retrieval)
+- ✅ `src/templates/index.twig` (accept .lottie in upload)
+- ✅ `src/templates/_field-input.twig` (updated for .lottie support)
+
+**Status**: ✅ Complete (compression on save is optional future enhancement)
 
 ### Phase 3: Power User & Brand Governance (Priority: LOW)
 

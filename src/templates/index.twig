@@ -21,7 +21,7 @@
         {% if primaryVolume %}
             <div class="lottie-upload-bar">
                 <form id="lottie-upload-form" enctype="multipart/form-data" class="lottie-upload-form-inline">
-                    <input type="file" id="lottie-file-input" accept=".json" style="display: none;">
+                    <input type="file" id="lottie-file-input" accept=".json,.lottie" style="display: none;">
                     <button type="button" id="lottie-upload-btn" class="btn submit add icon" data-icon="plus">
                         {{ "Upload Lottie File"|t('craft-lottie') }}
                     </button>
@@ -148,8 +148,9 @@
         if (!file) return;
         
         // Validate file extension
-        if (!file.name.toLowerCase().endsWith('.json')) {
-            Craft.cp.displayError('{{ "Only JSON files are allowed."|t('craft-lottie') }}');
+        const extension = file.name.toLowerCase().split('.').pop();
+        if (extension !== 'json' && extension !== 'lottie') {
+            Craft.cp.displayError('{{ "Only JSON and .lottie files are allowed."|t('craft-lottie') }}');
             fileInput.value = '';
             return;
         }

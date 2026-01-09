@@ -27,10 +27,18 @@ class DefaultController extends Controller
         // Get configured volume ID
         $volumeId = $settings->lottieVolumeId ?? null;
         
-        // Build asset query
+        // Build asset query - include both JSON and .lottie files
         $assetQuery = \craft\elements\Asset::find()
-            ->kind('json')
             ->orderBy(['dateCreated' => SORT_DESC]);
+        
+        // Filter by file extension (JSON or .lottie)
+        // Use raw SQL for filename pattern matching
+        $db = Craft::$app->getDb();
+        $assetQuery->andWhere([
+            'or',
+            ['like', 'filename', '%.json', false],
+            ['like', 'filename', '%.lottie', false]
+        ]);
         
         // Filter by volume if configured
         if ($volumeId && $volumeId > 0) {
@@ -110,8 +118,8 @@ class DefaultController extends Controller
             // Note: We don't validate file size here - Lottie files can be large
             // If there's a need to limit size, it should be done at upload time via Craft's asset settings
 
-            // Validate it's a valid Lottie file
-            $validation = \vu\craftlottie\Plugin::getInstance()->getLottieValidator()->validateLottieFile($contents);
+            // Validate it's a valid Lottie file (pass filename for format detection)
+            $validation = \vu\craftlottie\Plugin::getInstance()->getLottieValidator()->validateLottieFile($contents, $asset->filename);
             
             if (!$validation['valid']) {
                 // Log the validation error for debugging
@@ -336,14 +344,14 @@ class DefaultController extends Controller
             ])->setStatusCode(400);
         }
         
-        // Validate file extension
-        $extension = strtolower($uploadedFile->getExtension());
-        if ($extension !== 'json') {
-            return $this->asJson([
-                'success' => false,
-                'error' => Craft::t('craft-lottie', 'Only JSON files are allowed.'),
-            ])->setStatusCode(400);
-        }
+            // Validate file extension
+            $extension = strtolower($uploadedFile->getExtension());
+            if ($extension !== 'json' && $extension !== 'lottie') {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('craft-lottie', 'Only JSON and .lottie files are allowed.'),
+                ])->setStatusCode(400);
+            }
         
         try {
             // Read file contents to validate it's a Lottie file
@@ -356,8 +364,8 @@ class DefaultController extends Controller
                 ])->setStatusCode(400);
             }
             
-            // Validate it's a valid Lottie file
-            $validation = $plugin->getLottieValidator()->validateLottieFile($contents);
+            // Validate it's a valid Lottie file (pass filename for format detection)
+            $validation = $plugin->getLottieValidator()->validateLottieFile($contents, $uploadedFile->name);
             
             if (!$validation['valid']) {
                 return $this->asJson([

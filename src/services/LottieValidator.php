@@ -11,12 +11,74 @@ use craft\helpers\Json;
 class LottieValidator extends Component
 {
     /**
+     * Detects the format of a Lottie file
+     *
+     * @param string $content File content
+     * @param string|null $filename Optional filename for extension detection
+     * @return string 'json' or 'lottie'
+     */
+    public function detectFormat(string $content, ?string $filename = null): string
+    {
+        // Check by extension first
+        if ($filename) {
+            $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            if ($extension === 'lottie') {
+                return 'lottie';
+            }
+            if ($extension === 'json') {
+                return 'json';
+            }
+        }
+
+        // Check by magic bytes/content
+        // .lottie files are typically gzipped JSON
+        // Check if content starts with gzip magic bytes (0x1f 0x8b)
+        if (strlen($content) >= 2 && ord($content[0]) === 0x1f && ord($content[1]) === 0x8b) {
+            return 'lottie';
+        }
+
+        // Check if it's valid JSON (starts with { or [)
+        $trimmed = trim($content);
+        if ($trimmed[0] === '{' || $trimmed[0] === '[') {
+            return 'json';
+        }
+
+        // Default to json for backwards compatibility
+        return 'json';
+    }
+
+    /**
+     * Decompresses a .lottie file to JSON
+     *
+     * @param string $content Compressed .lottie content
+     * @return string Decompressed JSON string
+     * @throws \Exception If decompression fails
+     */
+    public function decompressLottie(string $content): string
+    {
+        // .lottie files are typically gzipped JSON
+        $decompressed = @gzdecode($content);
+        
+        if ($decompressed === false) {
+            // Try gzinflate as fallback (for deflate compression)
+            $decompressed = @gzinflate($content);
+        }
+        
+        if ($decompressed === false) {
+            throw new \Exception('Failed to decompress .lottie file. The file may be corrupted or in an unsupported format.');
+        }
+
+        return $decompressed;
+    }
+
+    /**
      * Validates that a JSON string is a valid Lottie animation
      *
      * @param string|array $data JSON string or decoded array
+     * @param string|null $filename Optional filename for format detection
      * @return array{valid: bool, error: string|null, data: array|null}
      */
-    public function validateLottieFile($data): array
+    public function validateLottieFile($data, ?string $filename = null): array
     {
         // Handle empty data
         if (empty($data)) {
@@ -37,6 +99,23 @@ class LottieValidator extends Component
                     'error' => 'The file is empty.',
                     'data' => null,
                 ];
+            }
+
+            // Detect format and decompress if needed
+            $format = $this->detectFormat($data, $filename);
+            
+            if ($format === 'lottie') {
+                try {
+                    $data = $this->decompressLottie($data);
+                    // After decompression, data is now a JSON string
+                    $trimmed = trim($data);
+                } catch (\Exception $e) {
+                    return [
+                        'valid' => false,
+                        'error' => 'Failed to decompress .lottie file: ' . $e->getMessage(),
+                        'data' => null,
+                    ];
+                }
             }
 
             try {

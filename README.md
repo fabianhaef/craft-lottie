@@ -28,3 +28,20 @@ composer require vu/craft-craft-lottie
 # tell Craft to install the plugin
 ./craft plugin/install craft-lottie
 ```
+
+## Configuration
+
+### Enable .lottie File Uploads
+
+By default, Craft CMS only allows certain file extensions to be uploaded. To enable `.lottie` file uploads, you need to add it to your `config/general.php` file:
+
+```php
+return GeneralConfig::create()
+    // ... other configuration ...
+    ->extraAllowedFileExtensions(['json', 'lottie'])
+;
+```
+
+**Note**: The `.json` extension is typically already allowed by Craft CMS, but you may want to explicitly include it if you're customizing the allowed extensions list.
+
+This configuration allows users to upload both `.json` and `.lottie` files through the Craft CMS control panel. The plugin will automatically detect and handle both formats.
