@@ -1,561 +1,445 @@
-# Craft Lottie Plugin - Implementation Plan
+# Craft Lottie Plugin - Enhanced Implementation Plan
 
 ## Executive Summary
 
-This document provides a comprehensive implementation plan for the Craft Lottie plugin, based on the existing codebase and the vision outlined in `DEV_PLAN.md`. The plugin aims to provide in-CMS editing capabilities for Lottie animations, allowing content authors to modify colors, text, and other properties without requiring motion designer intervention.
+This document provides a comprehensive implementation plan for the Craft Lottie plugin, including all completed features and new enhancements. The plugin empowers content authors to edit Lottie animations directly in Craft CMS, eliminating the need to involve motion designers for minor changes.
 
-## Current State Assessment
+## Current Status: Phase 1-3 Complete ✅
 
-### ✅ What's Already Implemented
+### ✅ Completed Features
 
-1. **Core Plugin Structure**
-   - Plugin registration and initialization (`src/Plugin.php`)
-   - Custom field type (`src/fields/LottieAnimatorField.php`)
-   - Service layer for rendering (`src/services/LottieService.php`)
-   - Twig variable for frontend access (`src/variables/LottieVariable.php`)
-   - CP section with navigation
+**Core Functionality:**
+- Custom field type with asset selection
+- Live preview with real-time updates
+- Color extraction and editing with brand palette support
+- Text layer editing (static and keyframed)
+- Layer management (show/hide layers)
+- Speed control and background color
+- Save as copy functionality
+- .json and .lottie format support
 
-2. **Field Functionality**
-   - Asset selection using Craft's native element selector
-   - Field settings (upload location, enable/disable features)
-   - Data storage in JSON format
-   - Value normalization and serialization
+**Interactivity:**
+- Scroll triggers (onScroll, onViewport)
+- Click actions (play, pause, toggle, restart)
+- Hover effects (enter/leave actions)
+- URL linking (layer-specific or global)
 
-3. **Editor Features (Partially Complete)**
-   - Live preview of Lottie animations
-   - Color extraction and editing
-   - Speed control slider
-   - Background color support
-   - Real-time preview updates
+**User Experience:**
+- Keyboard shortcuts (Ctrl+S, Ctrl+Z, etc.)
+- Undo/redo with history (50 states)
+- Improved loading states and error messages
+- Responsive design (mobile/tablet)
+- Help text and tooltips
 
-4. **Frontend Rendering**
-   - Twig function `craft.lottie.render()`
-   - Support for modified JSON data
-   - Configurable playback options (loop, autoplay, speed)
-   - Fallback to asset fetching if no modified data
+**Performance:**
+- Color extraction caching
+- JSON structure caching
+- Lazy loading of lottie-web library
+- Debounced rendering updates
 
-5. **Control Panel Features**
-   - CP section for managing Lottie files
-   - Separate edit page with full editor
-   - Asset JSON fetching endpoint
-   - Save functionality for edited animations
+**Infrastructure:**
+- Database migrations for metadata
+- Comprehensive validation
+- Error handling with user-friendly messages
+- Complete documentation (README, User Guide, Developer Docs)
 
-6. **Infrastructure**
-   - Database migration for metadata table
-   - Asset bundle registration
-   - JavaScript editor class (`LottieEditor`)
-   - CSS styling
+## Phase 4: High-Value Enhancements
 
-### ✅ Recently Completed
+### 4.1 Animation Sequencing/Playlists (Priority: HIGH)
 
-1. **Field Editor Integration** ✅
-   - Removed speed and color controls from field (preview-only mode)
-   - Field now shows only preview of selected Lottie animation
-   - All editing happens in dedicated CP edit page
-   - Clean, compact UI for field preview
+**Goal:** Allow users to chain multiple animations into sequences or playlists.
 
-2. **Data Flow** ✅
-   - Field value structure validation implemented
-   - Background color properly saved to metadata table
-   - Speed value properly persisted to metadata table
-   - Data normalization and validation in place
-   - Frontend rendering loads speed/background from metadata
+**Use Cases:**
+- Multi-step tutorials or product showcases
+- Storytelling animations
+- Sequential marketing campaigns
 
-3. **Coding Standards** ✅
-   - ECS (Easy Coding Standards) configuration added
-   - PHPStan level 5 static analysis configured
-   - Rector configuration for code modernization
-   - All code follows Craft CMS coding guidelines
+**Implementation Tasks:**
+- [ ] Create sequence data model (store ordered list of animation IDs)
+- [ ] Add sequence editor UI in CP
+- [ ] Implement sequence playback logic (auto-advance, manual control)
+- [ ] Add sequence controls (play, pause, next, previous, restart)
+- [ ] Support sequence-specific settings (delays, transitions)
+- [ ] Create Twig function for rendering sequences
+- [ ] Add sequence preview in editor
 
-4. **UI/UX Improvements** ✅
-   - Redesigned edit template with Craft CMS standard controls
-   - Improved layout using grid system (preview + sidebar)
-   - Better speed control with range slider + number input
-   - Improved color picker layout (grid with cards)
-   - Added loading states and spinners
-   - Better error messages
-   - Responsive design for mobile
-   - Used Craft's form helpers and CSS variables
+**Files to Create/Modify:**
+- `src/models/Sequence.php` - Sequence data model
+- `src/controllers/SequenceController.php` - CP routes for sequences
+- `src/templates/sequences/index.twig` - Sequence library
+- `src/templates/sequences/edit.twig` - Sequence editor
+- `src/services/LottieService.php` - Add `renderSequence()` method
+- `src/migrations/m260110_000000_create_sequences_table.php` - Database migration
 
-### ⚠️ What Needs Work
+**Technical Approach:**
+- Store sequences in new `lottie_sequences` table
+- Each sequence contains ordered list of asset IDs with optional delays
+- Frontend JavaScript handles auto-advance and controls
+- Use lottie-web's `addEventListener('complete')` to trigger next animation
 
-1. **Error Handling** ✅ COMPLETED
-   - [x] Add loading states and feedback (spinner, loading messages)
-   - [x] Show user-friendly error messages in edit template
-   - [x] Add validation for uploaded files (must be valid Lottie JSON)
-   - [x] Handle edge cases (empty files, corrupted JSON, etc.)
-   - [x] Created LottieValidator service for comprehensive validation
-   - [x] Added error codes for better error handling
-   - [x] Improved error messages with translations
-   - [x] Added file size validation (10MB max)
-   - [x] Created testing documentation (TESTING.md)
+**Estimated Time:** 12-16 hours
 
-4. **Phase 2 Features (In Progress)**
-   - ✅ Dynamic text editing - COMPLETED
-   - [ ] Layer management (show/hide layers)
-   - [ ] .lottie compressed format support
+### 4.2 Multi-Language Text Support (Priority: HIGH)
 
-5. **Phase 3 Features (Not Started)**
-   - Brand palette (global plugin settings)
-   - Advanced interactivity (URLs, scroll triggers)
-   - Save as new asset functionality
+**Goal:** Enable text editing per language/locale for international sites.
+
+**Use Cases:**
+- Multi-language websites
+- Localized marketing campaigns
+- International brand consistency
+
+**Implementation Tasks:**
+- [ ] Detect Craft's multi-site/multi-locale setup
+- [ ] Store text edits per locale in metadata
+- [ ] Update text editor UI to show locale selector
+- [ ] Implement locale-specific text extraction and editing
+- [ ] Update frontend rendering to use current locale's text
+- [ ] Add bulk text import/export for translations
+- [ ] Create translation management interface
+
+**Files to Create/Modify:**
+- `src/models/Settings.php` - Add locale support settings
+- `src/templates/edit.twig` - Add locale selector in text editor
+- `src/services/LottieService.php` - Locale-aware text rendering
+- `src/controllers/DefaultController.php` - Handle locale-specific saves
+- `src/migrations/m260111_000000_add_locale_to_metadata.php` - Database migration
+
+**Technical Approach:**
+- Store text edits as: `{locale: {layerPath: text}}` in metadata
+- Use Craft's `Craft::$app->getSites()->getCurrentSite()->language` for detection
+- Fallback to default locale if translation missing
+- UI shows all locales with tabs or dropdown
+
+**Estimated Time:** 10-14 hours
+
+### 4.3 Animation Presets/Templates (Priority: MEDIUM-HIGH)
+
+**Goal:** Save and reuse common animation configurations.
+
+**Use Cases:**
+- Consistent brand animations
+- Quick setup for similar animations
+- Template library for common patterns
+
+**Implementation Tasks:**
+- [ ] Create preset data model (name, description, settings)
+- [ ] Add preset management UI (create, edit, delete, duplicate)
+- [ ] Implement preset application logic
+- [ ] Add preset library/browser
+- [ ] Support preset categories/tags
+- [ ] Allow preset sharing (export/import)
+- [ ] Create default preset library
+
+**Files to Create/Modify:**
+- `src/models/Preset.php` - Preset data model
+- `src/controllers/PresetController.php` - CP routes for presets
+- `src/templates/presets/index.twig` - Preset library
+- `src/templates/presets/edit.twig` - Preset editor
+- `src/templates/edit.twig` - Add "Apply Preset" button
+- `src/migrations/m260112_000000_create_presets_table.php` - Database migration
+
+**Technical Approach:**
+- Store presets in `lottie_presets` table
+- Preset contains: colors, speed, interactions, layer visibility settings
+- Apply preset merges settings with current animation
+- Support preset inheritance (base preset + overrides)
+
+**Estimated Time:** 8-12 hours
+
+### 4.4 Version Control/History (Priority: MEDIUM-HIGH)
+
+**Goal:** Track changes over time with ability to compare and rollback.
+
+**Use Cases:**
+- Collaboration and experimentation
+- Reverting to previous versions
+- Tracking what changed and when
+
+**Implementation Tasks:**
+- [ ] Create version data model (timestamp, author, changes summary)
+- [ ] Implement automatic versioning on save
+- [ ] Add version history UI (timeline view)
+- [ ] Create version comparison view (diff visualization)
+- [ ] Implement rollback functionality
+- [ ] Add version notes/descriptions
+- [ ] Support version branching (if needed)
+
+**Files to Create/Modify:**
+- `src/models/Version.php` - Version data model
+- `src/controllers/VersionController.php` - Version management routes
+- `src/templates/versions/history.twig` - Version timeline
+- `src/templates/versions/compare.twig` - Version comparison
+- `src/migrations/m260113_000000_create_versions_table.php` - Database migration
+- `src/services/VersionService.php` - Version management logic
+
+**Technical Approach:**
+- Store full animation JSON snapshots in `lottie_versions` table
+- Use diff algorithm to show changes (colors, text, layers)
+- Implement soft deletes (keep versions, mark as deleted)
+- Limit version history (e.g., keep last 50 versions)
+
+**Estimated Time:** 14-18 hours
+
+## Phase 5: Medium-Value Features
+
+### 5.1 Bulk Operations (Priority: MEDIUM)
+
+**Goal:** Apply changes to multiple animations at once.
+
+**Use Cases:**
+- Rebranding campaigns
+- Seasonal updates
+- Batch color/text updates
+
+**Implementation Tasks:**
+- [ ] Create bulk operation interface (select multiple animations)
+- [ ] Implement bulk color replacement
+- [ ] Add bulk text updates
+- [ ] Support bulk preset application
+- [ ] Add bulk export functionality
+- [ ] Create operation preview/confirmation
+- [ ] Implement operation queue for large batches
+
+**Files to Create/Modify:**
+- `src/controllers/BulkController.php` - Bulk operation routes
+- `src/templates/bulk/index.twig` - Bulk operation interface
+- `src/services/BulkService.php` - Bulk operation logic
+- `src/templates/index.twig` - Add bulk selection checkboxes
+
+**Technical Approach:**
+- Use Craft's queue system for large operations
+- Provide progress feedback
+- Support undo for bulk operations
+- Validate all animations before applying changes
+
+**Estimated Time:** 10-14 hours
+
+### 5.2 Export Options (Priority: MEDIUM)
+
+**Goal:** Export animations in different formats and sizes.
+
+**Use Cases:**
+- Social media campaigns (GIF, MP4)
+- Email marketing (animated GIF)
+- Presentations (MP4, WebP)
+
+**Implementation Tasks:**
+- [ ] Research export libraries (FFmpeg, Canvas API)
+- [ ] Implement GIF export (animated)
+- [ ] Add MP4 export (video)
+- [ ] Support WebP export (animated)
+- [ ] Add size/resolution options
+- [ ] Create export queue for processing
+- [ ] Add export preview
+
+**Files to Create/Modify:**
+- `src/services/ExportService.php` - Export logic
+- `src/controllers/ExportController.php` - Export routes
+- `src/templates/edit.twig` - Add export button/modal
+- `src/templates/export/modal.twig` - Export options UI
+
+**Technical Approach:**
+- Use lottie-web to render frames
+- Capture frames using Canvas API
+- Use FFmpeg (server-side) or client-side libraries for video
+- Queue exports for large files
+- Store exports as Craft assets
+
+**Estimated Time:** 16-20 hours
+
+### 5.3 Animation Library/Collections (Priority: MEDIUM)
+
+**Goal:** Organize animations with categories, tags, and search.
+
+**Use Cases:**
+- Large animation libraries
+- Team collaboration
+- Quick discovery
+
+**Implementation Tasks:**
+- [ ] Add category/tag system
+- [ ] Implement search and filtering
+- [ ] Create collection management (folders/groups)
+- [ ] Add favorites/bookmarks
+- [ ] Implement usage tracking (where animations are used)
+- [ ] Add animation metadata (description, author, date)
+- [ ] Create library views (grid, list, thumbnails)
+
+**Files to Create/Modify:**
+- `src/models/Collection.php` - Collection data model
+- `src/controllers/CollectionController.php` - Collection routes
+- `src/templates/index.twig` - Enhanced library UI
+- `src/migrations/m260114_000000_add_collections.php` - Database migration
+- `src/services/CollectionService.php` - Collection logic
+
+**Technical Approach:**
+- Use Craft's native element indexing for search
+- Store categories/tags in metadata table
+- Use Craft's asset folders for collections
+- Implement Elasticsearch integration (optional)
+
+**Estimated Time:** 12-16 hours
+
+### 5.4 Analytics/Tracking (Priority: MEDIUM)
+
+**Goal:** Track animation performance and user interactions.
+
+**Use Cases:**
+- Optimization insights
+- A/B testing data
+- User engagement metrics
+
+**Implementation Tasks:**
+- [ ] Implement play completion tracking
+- [ ] Add interaction event tracking (clicks, hovers)
+- [ ] Create analytics dashboard
+- [ ] Add export functionality for analytics data
+- [ ] Implement privacy-compliant tracking (GDPR)
+- [ ] Add performance metrics (load time, file size)
+
+**Files to Create/Modify:**
+- `src/models/Analytics.php` - Analytics data model
+- `src/controllers/AnalyticsController.php` - Analytics routes
+- `src/templates/analytics/dashboard.twig` - Analytics UI
+- `src/services/AnalyticsService.php` - Analytics logic
+- `src/migrations/m260115_000000_create_analytics_table.php` - Database migration
+- `src/assets/js/analytics.js` - Frontend tracking
+
+**Technical Approach:**
+- Store events in database (anonymized)
+- Use JavaScript events (play, pause, complete, interaction)
+- Aggregate data for dashboard
+- Support data retention policies
+
+**Estimated Time:** 14-18 hours
+
+## Phase 6: Nice-to-Have Features
+
+### 6.1 A/B Testing (Priority: LOW-MEDIUM)
+
+**Goal:** Test different animation variations for conversion optimization.
+
+**Implementation Tasks:**
+- [ ] Create variant system (A/B/C variants)
+- [ ] Implement variant assignment logic
+- [ ] Add conversion tracking
+- [ ] Create results dashboard
+- [ ] Support statistical significance testing
+
+**Estimated Time:** 12-16 hours
+
+### 6.2 Accessibility Enhancements (Priority: LOW-MEDIUM)
+
+**Goal:** Improve accessibility compliance.
+
+**Implementation Tasks:**
+- [ ] Add reduced motion support (respect prefers-reduced-motion)
+- [ ] Implement ARIA labels and descriptions
+- [ ] Add keyboard navigation for interactions
+- [ ] Create alt text for animation containers
+- [ ] Support screen reader announcements
+
+**Estimated Time:** 8-12 hours
+
+### 6.3 Performance Monitoring (Priority: LOW)
+
+**Goal:** Monitor and optimize animation performance.
+
+**Implementation Tasks:**
+- [ ] Add file size warnings
+- [ ] Implement performance scoring
+- [ ] Create optimization suggestions
+- [ ] Add performance dashboard
+
+**Estimated Time:** 6-10 hours
+
+### 6.4 SEO Optimization (Priority: LOW)
+
+**Goal:** Improve SEO for animations.
+
+**Implementation Tasks:**
+- [ ] Add structured data (JSON-LD)
+- [ ] Implement alt text support
+- [ ] Add meta descriptions for animations
+- [ ] Support Open Graph tags
+
+**Estimated Time:** 4-8 hours
+
+### 6.5 Design Tool Integration (Priority: LOW)
+
+**Goal:** Integrate with external design tools.
+
+**Implementation Tasks:**
+- [ ] Research LottieFiles API integration
+- [ ] Add import from LottieFiles
+- [ ] Support direct upload from After Effects (if possible)
+- [ ] Create sync functionality
+
+**Estimated Time:** 16-20 hours (research-heavy)
 
 ## Implementation Roadmap
 
-### Phase 1: Complete MVP (Priority: HIGH)
+### Week 1-2: Phase 4.1 - Animation Sequencing
+- Days 1-3: Database schema and models
+- Days 4-6: Sequence editor UI
+- Days 7-9: Playback logic and controls
+- Days 10-12: Frontend rendering and testing
 
-**Goal**: Make the basic field editor fully functional with all MVP features working seamlessly.
+### Week 3-4: Phase 4.2 - Multi-Language Support
+- Days 1-3: Locale detection and data model
+- Days 4-6: Text editor UI updates
+- Days 7-9: Frontend rendering logic
+- Days 10-12: Translation management and testing
 
-#### 1.2 Fix Data Persistence (Estimated: 2-3 hours)
+### Week 5-6: Phase 4.3 - Presets/Templates
+- Days 1-3: Preset data model and storage
+- Days 4-6: Preset management UI
+- Days 7-9: Preset application logic
+- Days 10-12: Default library and testing
 
-**Tasks:**
-- [ ] Ensure speed value is properly saved in field value
-- [ ] Ensure background color is properly saved in field value
-- [ ] Fix `normalizeValue()` to handle all data structure cases
-- [ ] Add validation for Lottie JSON structure
-- [ ] Test save/load cycle with modified data
+### Week 7-8: Phase 4.4 - Version Control
+- Days 1-4: Version data model and storage
+- Days 5-8: Version history UI
+- Days 9-12: Comparison and rollback functionality
 
-**Files to Modify:**
-- `src/fields/LottieAnimatorField.php`
-- `src/assets/js/lottie-editor.js`
+### Week 9+: Phase 5 Features
+- Prioritize based on user feedback and needs
+- Implement in order of value/complexity
 
-**Technical Notes:**
-- Current `saveData()` method creates object with `assetId`, `data`, `speed`, `backgroundColor`
-- Need to ensure this structure is properly handled in `normalizeValue()`
-- Background color should be stored in field value, not just metadata table
+## Success Metrics
 
-#### 1.3 Improve Error Handling (Estimated: 2-3 hours)
+### Phase 4 Success Criteria:
+- ✅ Users can create and manage animation sequences
+- ✅ Multi-language sites can edit text per locale
+- ✅ Presets can be created and applied quickly
+- ✅ Version history enables safe experimentation
 
-**Tasks:**
-- [x] Add loading states and feedback (spinner, loading messages)
-- [x] Show user-friendly error messages in edit template
-- [ ] Add validation for uploaded files (must be valid Lottie JSON) - Partially done
-- [ ] Handle edge cases (empty files, corrupted JSON, etc.) - Partially done
+### Overall Plugin Success:
+- Reduces time from edit request to live update by 80%+
+- Enables non-designers to make animation edits
+- Maintains brand consistency through palette and presets
+- Provides enterprise features for large teams
 
-**Files Modified:**
-- `src/templates/edit.twig` - Added loading states and error handling
-- `src/assets/js/lottie-editor.js` - Error handling improvements
-- `src/controllers/DefaultController.php` - Basic validation
+## Technical Debt & Maintenance
 
-**Files to Further Modify:**
-- `src/fields/LottieAnimatorField.php` - Add file validation on upload
-
-#### 1.4 UI/UX Improvements ✅ COMPLETED
-
-**Tasks:**
-- [x] Redesigned edit template with Craft CMS standard controls
-- [x] Improved layout using grid system (preview + sidebar)
-- [x] Better speed control with range slider + number input
-- [x] Improved color picker layout (grid with cards)
-- [x] Added loading states and spinners
-- [x] Better error messages
-- [x] Responsive design for mobile
-- [x] Used Craft's form helpers and CSS variables
-
-**Files Modified:**
-- `src/templates/edit.twig` - Complete redesign
-
-**Deliverables:**
-- ✅ Modern, professional UI following Craft CMS standards
-- ✅ Better UX with proper controls and feedback
-- ✅ Responsive layout
-
-#### 1.5 Testing & Refinement (Estimated: 2-3 hours)
-
-**Tasks:**
-- [ ] Test complete workflow: upload → edit → save → render
-- [ ] Test with various Lottie file structures
-- [ ] Test color editing with different color formats
-- [ ] Test speed control with various values
-- [ ] Fix any remaining UI/UX issues
-- [ ] Ensure frontend rendering works correctly
-
-**Deliverables:**
-- Fully functional MVP
-- Working field preview
-- Working CP edit page with all controls
-- Proper data persistence
-- Frontend rendering working
-
-### Phase 2: Enhanced Editor & Workflow (Priority: MEDIUM)
-
-**Goal**: Add advanced editing features and improve the authoring experience.
-
-#### 2.1 Dynamic Text Editing ✅ COMPLETED
-
-**Tasks:**
-- [x] Identify text layers in Lottie JSON structure
-- [x] Create UI for editing text content
-- [x] Implement text replacement logic
-- [x] Handle keyframed text animations
-- [x] Add preview of text changes
-
-**Technical Approach:**
-- Lottie text layers have structure: `layers[].ty === 5` (text layer type)
-- Text content in: `layers[].t.d.k[].s.t` (keyframed) or `layers[].t.d.k.s.t` (static)
-- Traverse layers array, find text layers (ty === 5), extract text
-- Provide input fields for each text layer with layer names
-- Update JSON structure when text changes
-- Re-render preview automatically
-
-**Files Modified:**
-- `src/templates/edit.twig` - Added text editor UI and logic
-  - `extractTextLayers()` - Finds all text layers in Lottie JSON
-  - `findTextLayers()` - Recursively searches for text layers
-  - `createTextEditor()` - Creates UI for each text layer
-  - `updateText()` - Updates text in JSON and re-renders
-  - `getLayerByPath()` - Helper to navigate JSON structure
-- Added CSS styling for text editor components
-
-**Features:**
-- ✅ Detects text layers (type 5) in Lottie files
-- ✅ Handles both static and keyframed text
-- ✅ Shows layer names for easy identification
-- ✅ Real-time preview updates
-- ✅ Supports multiple text instances per layer
-- ✅ Clean UI matching Craft CMS design patterns
-
-#### 2.2 Layer Management ✅ COMPLETED
-
-**Tasks:**
-- [x] Extract layer information from Lottie JSON
-- [x] Create UI to list all layers
-- [x] Add toggle controls to show/hide layers
-- [x] Implement layer visibility logic
-- [x] Update preview when layers are toggled
-
-**Technical Approach:**
-- Lottie layers are in `layers[]` array
-- Each layer has `ip` (in point), `op` (out point), `st` (start time)
-- To hide a layer, set `op` to 0 (preserves structure for re-enabling)
-- Store original `op` value in `_originalOp` property for restoration
-- Layers displayed in reverse order (top layer first in UI)
-
-**Files Modified:**
-- `src/templates/edit.twig` - Added layer management UI and logic
-  - `extractLayers()` - Extracts all layers from Lottie JSON
-  - `createLayerControl()` - Creates UI checkbox for each layer
-  - `toggleLayerVisibility()` - Shows/hides layers by setting `op` to 0 or restoring original
-  - `getLayerTypeName()` - Maps layer type numbers to readable names
-- Added CSS styling for layer controls
-
-**Features:**
-- ✅ Lists all layers with names and types
-- ✅ Checkbox toggles for show/hide
-- ✅ Visual feedback (strikethrough, opacity) for hidden layers
-- ✅ Real-time preview updates
-- ✅ Preserves layer structure (can re-enable hidden layers)
-- ✅ Shows layer types (Shape, Text, Precomp, etc.)
-
-#### 2.3 Asset Volume Integration ✅ COMPLETED
-
-**Tasks:**
-- [x] Verify asset selector is working correctly
-- [x] Ensure proper filtering for JSON files only
-- [x] Add validation that selected asset is valid Lottie file
-- [x] Improve asset selection UX
-
-**Status**: ✅ Complete
-
-#### 2.4 .lottie Format Support ✅ COMPLETED
-
-**Tasks:**
-- [x] Research .lottie format specification
-- [x] Add library for .lottie decompression (if needed)
-- [x] Implement .lottie file detection
-- [x] Add decompression logic
-- [x] Handle both .json and .lottie formats
-- [x] Compression on save (preserves original format)
-
-**Technical Notes:**
-- .lottie is a compressed binary format (typically gzipped JSON)
-- Using PHP's native `gzdecode()` for decompression
-- Format detection by file extension and magic bytes
-- Both formats are validated and handled transparently
-
-**Configuration Required:**
-- Users must enable `.lottie` file uploads in `config/general.php`:
-  ```php
-  ->extraAllowedFileExtensions(['json', 'lottie'])
-  ```
-- See README.md for detailed configuration instructions
-
-**Files Modified:**
-- ✅ `src/services/LottieValidator.php` (format detection, decompression & compression)
-- ✅ `src/controllers/DefaultController.php` (handle .lottie files in upload/retrieval/save)
-- ✅ `src/templates/index.twig` (accept .lottie in upload)
-- ✅ `src/templates/_field-input.twig` (updated for .lottie support)
-
-**Compression on Save:**
-- Automatically preserves original file format (.json files saved as .json, .lottie files saved as .lottie)
-- Uses gzip compression (level 9) for .lottie files
-- Falls back to JSON if compression fails
-- Updates filename extension if format changes
-
-**Status**: ✅ Complete
-
-### Phase 3: Power User & Brand Governance (Priority: LOW)
-
-**Goal**: Add enterprise features for brand consistency and advanced workflows.
-
-#### 3.1 Brand Palette (Estimated: 6-8 hours)
-
-**Tasks:**
-- [x] Create plugin settings page
-- [x] Add brand color palette configuration
-- [x] Store palette in plugin settings
-- [x] Integrate palette into field color picker
-- [x] Show palette colors alongside custom colors
-- [ ] Add validation to restrict to palette (optional - future enhancement)
-
-**Technical Approach:**
-- Use Craft's plugin settings system
-- Store colors as array in settings
-- Pass palette to field editor via options
-- Display palette as swatches in color picker UI
-- Allow selection from palette or custom color
-
-**Implementation Details:**
-- Brand palette stored as array of hex color codes in Settings model
-- Interactive UI in settings page to add/remove/edit palette colors
-- Palette colors displayed as clickable swatches in edit template
-- Clicking a palette color applies it to the closest matching color in animation
-- Palette colors shown separately from extracted animation colors
-- Visual distinction with section titles and separators
-
-**Files Modified:**
-- ✅ `src/models/Settings.php` (added brandPalette property with validation)
-- ✅ `src/templates/settings.twig` (added palette configuration UI with JavaScript)
-- ✅ `src/controllers/SettingsController.php` (handle palette saving)
-- ✅ `src/controllers/DefaultController.php` (pass palette to edit template)
-- ✅ `src/templates/edit.twig` (display palette and integrate with color picker)
-
-**Status**: ✅ Complete (validation to restrict to palette is optional future enhancement)
-
-#### 3.2 Advanced Interactivity (Estimated: 10-12 hours)
-
-**Tasks:**
-- [x] Add URL linking to animation elements
-- [x] Implement scroll-based playback triggers
-- [x] Add click/hover interaction options
-- [x] Create UI for configuring interactions
-- [x] Generate interaction code for frontend
-
-**Technical Approach:**
-- Store interaction metadata in field value and database
-- Use lottie-web's event system and native JavaScript events
-- Add JavaScript for scroll detection (scroll events, IntersectionObserver)
-- Generate frontend code in `LottieService::render()`
-
-**Implementation Details:**
-- Interactions stored in `lottie_metadata` table as JSON
-- Four interaction types supported:
-  - **Scroll**: `onScroll` (play on scroll direction) or `onViewport` (play when in viewport)
-  - **Click**: Play, pause, toggle, or restart on click
-  - **Hover**: Play/pause/restart on mouse enter/leave
-  - **URL**: Make animation or specific layer clickable with URL link
-- UI in edit template allows adding/removing/editing interactions
-- Frontend code automatically generated and injected into rendered animation
-
-**Files Modified:**
-- ✅ `src/fields/LottieAnimatorField.php` (added interactions normalization)
-- ✅ `src/templates/edit.twig` (added interaction configuration UI and JavaScript)
-- ✅ `src/controllers/DefaultController.php` (handle interactions in get/save actions)
-- ✅ `src/services/LottieService.php` (generate interaction JavaScript code)
-- ✅ `src/migrations/m260109_000000_add_interactions_to_lottie_metadata.php` (database migration)
-
-**Status**: ✅ Complete
-
-#### 3.3 Save as New Asset (Estimated: 6-8 hours)
-
-**Tasks:**
-- [x] Add "Save as Copy" button to editor
-- [x] Create new asset from modified JSON
-- [x] Generate unique filename
-- [x] Copy metadata to new asset
-- [x] Handle asset creation with proper permissions
-
-**Technical Approach:**
-- Use Craft's asset creation API
-- Create new asset in same volume or specified location
-- Generate filename: `original-name-edited-{timestamp}.{ext}`
-- Preserve all modifications (colors, text, layers, interactions)
-- Copy metadata (backgroundColor, speed, interactions) to new asset
-
-**Implementation Details:**
-- "Save as Copy" button added next to "Save Changes" button
-- New `actionSaveAsNewAsset()` controller method creates new asset
-- Unique filename generated with timestamp: `original-name-edited-{YmdHis}.{ext}`
-- New asset created in same folder and volume as original
-- All metadata copied to new asset's metadata table entry
-- Automatic redirect to new asset editor after successful save
-
-**Files Modified:**
-- ✅ `src/controllers/DefaultController.php` (added actionSaveAsNewAsset method)
-- ✅ `src/templates/edit.twig` (added Save as Copy button and JavaScript handler)
-
-**Status**: ✅ Complete
-
-## Technical Debt & Improvements
-
-### Code Quality
-- [x] Add PHPStan level 8 compliance
-- [x] Add comprehensive PHPDoc comments
+### Ongoing Tasks:
 - [ ] Refactor JavaScript for better maintainability
 - [ ] Add unit tests for critical functions
 - [ ] Add integration tests for field workflow
-
-### Performance
-- [x] Optimize color extraction algorithm
-- [x] Cache parsed Lottie JSON structure
-- [x] Lazy load lottie-web library
-- [x] Optimize preview rendering
-
-### User Experience
-- [x] Add keyboard shortcuts
-- [x] Improve loading states
-- [x] Add undo/redo functionality
-- [x] Better error messages
-- [x] Add help text and tooltips
-- [x] Responsive design improvements
-
-### Documentation
-- [ ] Complete README with examples
-- [ ] Add inline code documentation
-- [ ] Create user guide
-- [ ] Add developer documentation
-
-## Recommended Implementation Order
-
-### Immediate (Week 1-2)
-1. **Phase 1.1**: Fix Field Input UI
-2. **Phase 1.2**: Fix Data Persistence
-3. **Phase 1.3**: Improve Error Handling
-4. **Phase 1.4**: Testing & Refinement
-
-### Short-term (Week 3-6)
-5. **Phase 2.1**: Dynamic Text Editing
-6. **Phase 2.2**: Layer Management
-7. **Phase 2.3**: Asset Volume Integration (refinement)
-
-### Medium-term (Week 7-10)
-8. **Phase 2.4**: .lottie Format Support
-9. **Phase 3.1**: Brand Palette
-
-### Long-term (Week 11+)
-10. **Phase 3.2**: Advanced Interactivity
-11. **Phase 3.3**: Save as New Asset
-12. Technical debt and improvements
-
-## Key Technical Decisions Needed
-
-1. **Color Editing Strategy**
-   - Current: Replace all instances of a color
-   - Alternative: Edit specific layer colors individually
-   - **Recommendation**: Keep current approach for MVP, add layer-specific editing in Phase 2
-
-2. **Data Storage Strategy**
-   - Current: Store modified JSON in field value
-   - Alternative: Store only modifications, merge on render
-   - **Recommendation**: Current approach is simpler and works well
-
-3. **Preview Rendering**
-   - Current: Use lottie-web in CP
-   - Alternative: Use @lottiefiles/lottie-js for manipulation, lottie-web for preview
-   - **Recommendation**: Current approach works, but consider using lottie-js for better manipulation
-
-4. **.lottie Format**
-   - Need to research: Can lottie-web handle .lottie directly?
-   - If not, which library to use for decompression?
-   - **Action**: Research before implementing
-
-## Dependencies Review
-
-### Current Dependencies
-- `@lottiefiles/lottie-js`: ^0.4.2 (installed but may not be used)
-- `lottie-web`: ^5.13.0 (used for rendering)
-
-### Potential Additional Dependencies
-- Library for .lottie format (TBD)
-- Color manipulation library (if needed)
-- Text extraction/editing utilities (if needed)
-
-## Testing Strategy
-
-### Manual Testing Checklist
-- [ ] Upload valid Lottie JSON file
-- [ ] Select existing asset
-- [ ] Edit colors and see preview update
-- [ ] Change speed and see preview update
-- [ ] Save entry and verify data persists
-- [ ] Load entry and verify data loads correctly
-- [ ] Render on frontend with Twig function
-- [ ] Test with various Lottie file structures
-- [ ] Test error cases (invalid JSON, missing file, etc.)
-
-### Automated Testing (Future)
-- Unit tests for field value normalization
-- Unit tests for color extraction
-- Integration tests for save/load cycle
-- Frontend rendering tests
-
-## Success Criteria
-
-### Phase 1 MVP Complete When:
-- ✅ Users can select/upload Lottie files in field
-- ✅ Live preview works in field editor
-- ✅ Color editing works and persists
-- ✅ Speed control works and persists
-- ✅ Frontend rendering works correctly
-- ✅ No critical bugs or errors
-
-### Phase 2 Complete When:
-- ✅ Text editing works
-- ✅ Layer management works
-- ✅ .lottie format supported (if feasible)
-
-### Phase 3 Complete When:
-- ✅ Brand palette implemented
-- ✅ Advanced interactivity works
-- ✅ Save as new asset works
+- [ ] Performance monitoring and optimization
+- [ ] Security audits and updates
+- [ ] Documentation updates
 
 ## Notes & Considerations
 
-1. **Lottie JSON Structure**: Lottie files have complex nested structures. Color/text extraction needs to handle various formats and edge cases.
-
-2. **Performance**: Large Lottie files may cause performance issues. Consider:
-   - Limiting preview size
-   - Debouncing preview updates
-   - Optimizing color extraction
-
-3. **Browser Compatibility**: Ensure lottie-web works in all target browsers. Consider polyfills if needed.
-
-4. **Security**: Validate all user input, especially JSON data. Ensure no XSS vulnerabilities in rendered output.
-
-5. **Backward Compatibility**: Consider how to handle existing field values if data structure changes.
-
-6. **Asset Permissions**: Ensure users have proper permissions to access and modify assets.
-
-## Getting Started
-
-To begin implementation:
-
-1. **Review Current Code**: Understand the existing implementation
-2. **Set Up Development Environment**: Ensure plugin is linked to Craft project
-3. **Start with Phase 1.1**: Fix the field input UI
-4. **Test Incrementally**: Test each feature as you implement it
-5. **Document Changes**: Update this plan as you progress
-
-## Questions to Resolve
-
-1. Should color editing replace ALL instances of a color, or allow selective replacement?
-2. How should we handle Lottie files with embedded images/assets?
-3. Should we support Lottie files with expressions?
-4. What's the maximum file size we should support?
-5. Should edited animations be saved back to the original asset or always stored separately?
+1. **Scalability**: Consider caching strategies for large animation libraries
+2. **Performance**: Monitor export operations and queue processing
+3. **Security**: Validate all user inputs, especially in bulk operations
+4. **Compatibility**: Test with various Lottie file structures and versions
+5. **User Experience**: Gather feedback after each phase before proceeding
 
 ---
 
-**Last Updated**: 2026-01-08
-**Status**: Ready for Implementation
-**Next Steps**: Begin Phase 1.1 - Fix Field Input UI
+**Last Updated**: 2026-01-09
+**Status**: Ready for Phase 4 Implementation
+**Next Steps**: Begin Phase 4.1 - Animation Sequencing
