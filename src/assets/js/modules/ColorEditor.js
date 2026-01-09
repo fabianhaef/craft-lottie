@@ -8,6 +8,13 @@ class ColorEditor {
         this.lottieData = null;
         this.onColorChange = config.onColorChange || (() => {});
         this.onChange = config.onChange || (() => {});
+        
+        // Performance: Cache color locations to avoid full re-traversal
+        this.colorCache = {
+            colors: new Set(),
+            colorLocations: new Map(), // Map<hexColor, Array<{path, value}>>
+            dataHash: null // Hash of data to detect changes
+        };
     }
 
     /**
@@ -15,7 +22,31 @@ class ColorEditor {
      * @param {Object} lottieData - Lottie animation data
      */
     setLottieData(lottieData) {
+        // Invalidate cache if data changed
+        const dataHash = this.hashData(lottieData);
+        if (this.colorCache.dataHash !== dataHash) {
+            this.colorCache.colors.clear();
+            this.colorCache.colorLocations.clear();
+            this.colorCache.dataHash = dataHash;
+        }
         this.lottieData = lottieData;
+    }
+
+    /**
+     * Simple hash function for data change detection
+     * @param {Object} obj - Object to hash
+     * @returns {string} Hash string
+     */
+    hashData(obj) {
+        // Simple hash based on JSON string length and key count
+        // This is fast and sufficient for change detection
+        if (!obj) return 'null';
+        try {
+            const str = JSON.stringify(obj);
+            return `${str.length}_${Object.keys(obj).length}`;
+        } catch (e) {
+            return 'error';
+        }
     }
 
     /**
@@ -26,8 +57,14 @@ class ColorEditor {
             return;
         }
 
-        const colors = new Set();
-        this.findColors(this.lottieData, colors);
+        // Use cached colors if available, otherwise extract
+        let colors = this.colorCache.colors;
+        if (colors.size === 0 || this.colorCache.colorLocations.size === 0) {
+            colors = new Set();
+            this.colorCache.colorLocations.clear();
+            this.findColors(this.lottieData, colors, '', this.colorCache.colorLocations);
+            this.colorCache.colors = colors;
+        }
 
         this.colorContainer.innerHTML = '';
 
@@ -88,29 +125,49 @@ class ColorEditor {
      * @param {Object} obj - Object to search
      * @param {Set} colors - Set to add colors to
      * @param {string} path - Current path (for debugging)
+     * @param {Map} colorLocations - Map to store color locations for faster updates
      */
-    findColors(obj, colors, path = '') {
+    findColors(obj, colors, path = '', colorLocations = null) {
         if (typeof obj !== 'object' || obj === null) return;
 
         for (const key in obj) {
             const value = obj[key];
+            const currentPath = path ? `${path}.${key}` : key;
 
             // Look for color arrays: 'c', 's' (stroke), 'fc' (fill color)
             if (['c', 's', 'fc'].includes(key) && Array.isArray(value)) {
+                let colorHex = null;
+                let colorValue = null;
+                
                 // Check if it's a keyframed color (has 'k' property)
                 if (value.k && Array.isArray(value.k) && value.k.length >= 3) {
-                    const colorHex = LottieDataUtils.rgbArrayToHex(value.k);
-                    colors.add(colorHex);
+                    colorHex = LottieDataUtils.rgbArrayToHex(value.k);
+                    colorValue = value.k;
                 }
                 // Check if it's a direct color array
                 else if (value.length >= 3 && typeof value[0] === 'number') {
-                    const colorHex = LottieDataUtils.rgbArrayToHex(value);
+                    colorHex = LottieDataUtils.rgbArrayToHex(value);
+                    colorValue = value;
+                }
+                
+                if (colorHex) {
                     colors.add(colorHex);
+                    // Cache location for faster updates
+                    if (colorLocations) {
+                        if (!colorLocations.has(colorHex)) {
+                            colorLocations.set(colorHex, []);
+                        }
+                        colorLocations.get(colorHex).push({
+                            path: currentPath,
+                            value: colorValue,
+                            parent: value
+                        });
+                    }
                 }
             }
-            // Recursively search nested objects
-            else if (typeof value === 'object') {
-                this.findColors(value, colors, path ? `${path}.${key}` : key);
+            // Recursively search nested objects (but limit depth to avoid stack overflow)
+            else if (typeof value === 'object' && path.split('.').length < 20) {
+                this.findColors(value, colors, currentPath, colorLocations);
             }
         }
     }
@@ -205,7 +262,30 @@ class ColorEditor {
 
         if (!oldRgb || !newRgb) return;
 
-        this.replaceColor(this.lottieData, oldRgb, newRgb);
+        // Performance: Use cached locations if available for faster updates
+        if (this.colorCache.colorLocations.has(oldColor)) {
+            const locations = this.colorCache.colorLocations.get(oldColor);
+            locations.forEach(location => {
+                if (location.value && location.value.length >= 3) {
+                    location.value[0] = newRgb[0];
+                    location.value[1] = newRgb[1];
+                    location.value[2] = newRgb[2];
+                }
+            });
+            // Update cache: remove old color, add new color
+            this.colorCache.colors.delete(oldColor);
+            this.colorCache.colors.add(newColor);
+            // Update locations map
+            this.colorCache.colorLocations.set(newColor, locations);
+            this.colorCache.colorLocations.delete(oldColor);
+        } else {
+            // Fallback to full traversal if cache is not available
+            this.replaceColor(this.lottieData, oldRgb, newRgb);
+            // Invalidate cache to force re-extraction
+            this.colorCache.colors.clear();
+            this.colorCache.colorLocations.clear();
+        }
+        
         this.onColorChange();
         this.onChange();
     }

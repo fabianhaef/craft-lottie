@@ -681,20 +681,73 @@
 {% endcss %}
 
 {% js %}
-// Load lottie-web library dynamically
-// Using version 5.9.6 which is more stable with minimal text layer structures
-const lottieScript = document.createElement('script');
-lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js';
-lottieScript.onload = function() {
-    initLottieEditor();
-};
-lottieScript.onerror = function() {
+// Performance: Lazy load lottie-web library using Intersection Observer
+// Only load when the preview container is visible or about to be visible
+(function() {
     const previewContainer = document.getElementById('lottie-preview');
-    if (previewContainer) {
-        previewContainer.innerHTML = '<div class="lottie-loading"><p style="color: #cf1124;">Failed to load Lottie library. Please refresh the page.</p></div>';
+    if (!previewContainer) return;
+
+    let lottieLoaded = false;
+    let editorInitialized = false;
+
+    function loadLottieLibrary() {
+        if (lottieLoaded) return;
+        lottieLoaded = true;
+
+        // Using version 5.9.6 which is more stable with minimal text layer structures
+        const lottieScript = document.createElement('script');
+        lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js';
+        lottieScript.onload = function() {
+            if (!editorInitialized) {
+                initLottieEditor();
+                editorInitialized = true;
+            }
+        };
+        lottieScript.onerror = function() {
+            if (previewContainer) {
+                previewContainer.innerHTML = '<div class="lottie-loading"><p style="color: #cf1124;">Failed to load Lottie library. Please refresh the page.</p></div>';
+            }
+        };
+        document.head.appendChild(lottieScript);
     }
-};
-document.head.appendChild(lottieScript);
+
+    // Check if Intersection Observer is available
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting || entry.intersectionRatio > 0) {
+                    loadLottieLibrary();
+                    observer.disconnect(); // Only load once
+                }
+            });
+        }, {
+            rootMargin: '100px' // Start loading 100px before element is visible
+        });
+
+        observer.observe(previewContainer);
+    } else {
+        // Fallback: Load immediately if Intersection Observer is not supported
+        loadLottieLibrary();
+    }
+
+    // Also load if user interacts with the page (click, scroll, etc.)
+    let interactionListener = null;
+    const loadOnInteraction = () => {
+        if (!lottieLoaded) {
+            loadLottieLibrary();
+            // Remove listeners after first interaction
+            if (interactionListener) {
+                document.removeEventListener('click', interactionListener);
+                document.removeEventListener('scroll', interactionListener);
+                document.removeEventListener('touchstart', interactionListener);
+            }
+        }
+    };
+    interactionListener = loadOnInteraction;
+    document.addEventListener('click', loadOnInteraction, { once: true, passive: true });
+    document.addEventListener('scroll', loadOnInteraction, { once: true, passive: true });
+    document.addEventListener('touchstart', loadOnInteraction, { once: true, passive: true });
+})();
 
 function initLottieEditor() {
     const previewContainer = document.getElementById('lottie-preview');
